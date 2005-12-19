@@ -12,9 +12,10 @@ from elementtree.ElementTree import _escape_attrib
 from elementtree.ElementTree import _encode
 from elementtree.ElementTree import fixtag
 
-_MELD_PREFIX = 'http://www.plope.com/software/meld3'
+_MELD_PREFIX = '{http://www.plope.com/software/meld3}'
 _MELD_LOCAL = 'id'
-_MELD_ID = '{%s}%s' % (_MELD_PREFIX, _MELD_LOCAL)
+_MELD_ID = '%s%s' % (_MELD_PREFIX, _MELD_LOCAL)
+_XHTML_PREFIX = '{http://www.w3.org/1999/xhtml}'
 
 _marker = []
 
@@ -105,7 +106,7 @@ def parse(source):
             
     return root
 
-def write(root, file, encoding="us-ascii"):
+def write(root, file, encoding="us-ascii", html=False, preserve_meldids=False):
     assert root is not None
     if not hasattr(file, "write"):
         file = open(file, "wb")
@@ -113,9 +114,12 @@ def write(root, file, encoding="us-ascii"):
         encoding = "us-ascii"
     elif encoding != "utf-8" and encoding != "us-ascii":
         file.write("<?xml version='1.0' encoding='%s'?>\n" % encoding)
-    _write(file, root, encoding, {})
+    if html:
+        _write_html(file, root, encoding, {}, preserve_meldids)
+    else:
+        _write(file, root, encoding, {}, preserve_meldids)
 
-def _write(file, node, encoding, namespaces):
+def _write(file, node, encoding, namespaces, preserve_meldids):
     # write XML to file
     tag = node.tag
     if tag is Comment:
@@ -138,8 +142,9 @@ def _write(file, node, encoding, namespaces):
             for k, v in items:
                 try:
                     if isinstance(k, QName) or k[:1] == "{":
-                        if k == _MELD_ID:
-                            continue
+                        if not preserve_meldids:
+                            if k == _MELD_ID:
+                                continue
                         k, xmlns = fixtag(k, namespaces)
                         if xmlns: xmlns_items.append(xmlns)
                 except TypeError:
@@ -160,7 +165,7 @@ def _write(file, node, encoding, namespaces):
             if node.text:
                 file.write(_escape_cdata(node.text, encoding))
             for n in node:
-                _write(file, n, encoding, namespaces)
+                _write(file, n, encoding, namespaces, preserve_meldids)
             file.write("</" + _encode(tag, encoding) + ">")
         else:
             file.write(" />")
@@ -168,6 +173,78 @@ def _write(file, node, encoding, namespaces):
             del namespaces[v]
     if node.tail:
         file.write(_escape_cdata(node.tail, encoding))
+
+_HTMLTAGS_EMPTY    = ['area', 'base', 'basefont', 'br', 'col', 'frame',
+                      'hr', 'img', 'input', 'isindex', 'link', 'meta',
+                      'param']
+_HTMLTAGS_NOESCAPE = ['script', 'style']
+_HTMLATTRS_BOOLEAN = ['selected', 'checked', 'compact', 'declare',
+                      'defer', 'disabled', 'ismap', 'multiple', 'nohref',
+                      'noresize', 'noshade', 'nowrap']
+
+def _write_html(file, node, encoding, namespaces, preserve_meldids):
+    # write XML to file
+    tag = node.tag
+    if tag is Comment:
+        file.write("<!-- %s -->" % _escape_cdata(node.text, encoding))
+    elif tag is ProcessingInstruction:
+        file.write("<?%s?>" % _escape_cdata(node.text, encoding))
+    else:
+        if tag.startswith(_XHTML_PREFIX):
+            tag = tag[len(_XHTML_PREFIX):]
+        items = node.items()
+        xmlns_items = [] # new namespaces in this scope
+        try:
+            if isinstance(tag, QName) or tag[:1] == "{":
+                tag, xmlns = fixtag(tag, namespaces)
+                if xmlns: xmlns_items.append(xmlns)
+        except TypeError:
+            _raise_serialization_error(tag)
+        file.write("<" + _encode(tag, encoding))
+        if items or xmlns_items:
+            items.sort() # lexical order
+            for k, v in items:
+                try:
+                    if isinstance(k, QName) or k[:1] == "{":
+                        if not preserve_meldids:
+                            if k == _MELD_ID:
+                                continue
+                        k, xmlns = fixtag(k, namespaces)
+                        if xmlns: xmlns_items.append(xmlns)
+                except TypeError:
+                    _raise_serialization_error(k)
+                try:
+                    if isinstance(v, QName):
+                        v, xmlns = fixtag(v, namespaces)
+                        if xmlns: xmlns_items.append(xmlns)
+                except TypeError:
+                    _raise_serialization_error(v)
+                if k.lower() in _HTMLATTRS_BOOLEAN:
+                    file.write(' %s' % _encode(k, encoding))
+                else:
+                    file.write(" %s=\"%s\"" % (_encode(k, encoding),
+                                               _escape_attrib(v, encoding)))
+            for k, v in xmlns_items:
+                file.write(" %s=\"%s\"" % (_encode(k, encoding),
+                                           _escape_attrib(v, encoding)))
+        if node.text or len(node):
+            file.write(">")
+            if node.text:
+                file.write(_escape_cdata(node.text, encoding))
+            for n in node:
+                _write_html(file, n, encoding, namespaces, preserve_meldids)
+            file.write("</" + _encode(tag, encoding) + ">")
+        else:
+            if node.tag.lower() in _HTMLTAGS_EMPTY:
+                file.write('>')
+            else:
+                file.write('>')
+                file.write("</" + _encode(tag, encoding) + ">")
+        for k, v in xmlns_items:
+            del namespaces[v]
+    if node.tail:
+        file.write(_escape_cdata(node.tail, encoding))
+
 
 def test(filename):
     root = parse(open(filename, 'r'))

@@ -18,6 +18,32 @@ _SIMPLE_XHTML = r"""<html xmlns="http://www.w3.org/1999/xhtml"
 </html>
 """
 
+_EMPTYTAGS_HTML = """<html>
+  <body>
+    <area/><base/><basefont/><br/><col/><frame/><hr/><img/><input/><isindex/>
+    <link/><meta/><param/>
+  </body>
+</html>
+"""
+
+_BOOLEANATTRS_HTML= """<html>
+  <body>
+  <tag selected="true"/>
+  <tag checked="true"/>
+  <tag compact="true"/>
+  <tag declare="true"/>
+  <tag defer="true"/>
+  <tag disabled="true"/>
+  <tag ismap="true"/>
+  <tag multiple="true"/>
+  <tag nohref="true"/>
+  <tag noresize="true"/>
+  <tag noshade="true"/>
+  <tag nowrap="true"/>
+  </body>
+</html>
+"""
+
 _COMPLEX_XHTML = r"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:meld="http://www.plope.com/software/meld3"
@@ -348,7 +374,145 @@ class WriterTests(unittest.TestCase):
   </list>
 </root>"""
         self.assertEqual(actual, expected)
+
+    def test_write_simple_xhtml(self):
+        from meld3 import parse
+        from meld3 import write
+        data = StringIO(_SIMPLE_XHTML)
+        root = parse(data)
+        out = StringIO()
+        write(root, out)
+        out.seek(0)
+        actual = out.read()
+        expected = """<html:html xmlns:html="http://www.w3.org/1999/xhtml">
+   <html:body>Hello!</html:body>
+</html:html>"""
+        self.assertEqual(actual, expected)
+
+    def test_write_simple_xhtml_as_html(self):
+        from meld3 import parse
+        from meld3 import write
+        data = StringIO(_SIMPLE_XHTML)
+        root = parse(data)
+        out = StringIO()
+        write(root, out, html=True)
+        out.seek(0)
+        actual = out.read()
+        expected = """<html>
+   <body>Hello!</body>
+</html>"""
+        self.assertEqual(actual, expected)
+
+    def test_write_complex_xhtml_as_html(self):
+        from meld3 import parse
+        from meld3 import write
+        data = StringIO(_COMPLEX_XHTML)
+        root = parse(data)
+        out = StringIO()
+        write(root, out, html=True)
+        out.seek(0)
+        actual = out.read()
+        expected = """<html>
+  <head>
+    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"></meta>
+    <title>This is the title</title>
+  </head>
+  
+  <body>
+    <div ns0:baz="slab" xmlns:ns0="http://foo/bar"></div>
+    <div>
+      <form action="." method="POST">
+      <table border="0">
+        <tbody>
+          <tr class="foo">
+            <td>Name</td>
+            <td>Description</td>
+          </tr>
+        </tbody>
+      </table>
+      </form>
+    </div>
+  </body>
+</html>"""
+        self.assertEqual(actual, expected)
+
+    def test_write_emptytags_html(self):
+        from meld3 import parse
+        from meld3 import write
+        data = StringIO(_EMPTYTAGS_HTML)
+        root = parse(data)
+        out = StringIO()
+        write(root, out, html=True)
+        out.seek(0)
+        actual = out.read()
+        expected = """<html>
+  <body>
+    <area><base><basefont><br><col><frame><hr><img><input><isindex>
+    <link><meta><param>
+  </body>
+</html>"""
+        self.assertEqual(actual, expected)
         
+    def test_write_booleanattrs_html(self):
+        from meld3 import parse
+        from meld3 import write
+        data = StringIO(_BOOLEANATTRS_HTML)
+        root = parse(data)
+        out = StringIO()
+        write(root, out, html=True)
+        out.seek(0)
+        actual = out.read()
+        expected = """<html>
+  <body>
+  <tag selected></tag>
+  <tag checked></tag>
+  <tag compact></tag>
+  <tag declare></tag>
+  <tag defer></tag>
+  <tag disabled></tag>
+  <tag ismap></tag>
+  <tag multiple></tag>
+  <tag nohref></tag>
+  <tag noresize></tag>
+  <tag noshade></tag>
+  <tag nowrap></tag>
+  </body>
+</html>"""
+        self.assertEqual(actual, expected)
+
+    def test_write_simple_xhtml_preserve_meldids(self):
+        from meld3 import parse
+        from meld3 import write
+        data = StringIO(_SIMPLE_XHTML)
+        root = parse(data)
+        out = StringIO()
+        write(root, out, preserve_meldids=True)
+        out.seek(0)
+        actual = out.read()
+        expected = """<html:html xmlns:html="http://www.w3.org/1999/xhtml">
+   <html:body ns1:id="body" xmlns:ns1="http://www.plope.com/software/meld3">Hello!</html:body>
+</html:html>"""
+        self.assertEqual(actual, expected)
+
+    def test_write_simple_xml_preserve_meldids(self):
+        from meld3 import parse
+        from meld3 import write
+        data = StringIO(_SIMPLE_XML)
+        root = parse(data)
+        out = StringIO()
+        write(root, out, preserve_meldids=True)
+        out.seek(0)
+        actual = out.read()
+        expected = """<root>
+  <list ns0:id="list" xmlns:ns0="http://www.plope.com/software/meld3">
+    <item ns0:id="item">
+       <name ns0:id="name">Name</name>
+       <description ns0:id="description">Description</description>
+    </item>
+  </list>
+</root>"""
+        self.assertEqual(actual, expected)
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest( unittest.makeSuite( MeldHelperTests ) )

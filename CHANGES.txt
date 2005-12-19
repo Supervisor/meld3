@@ -1,0 +1,13 @@
+0.2
+
+   Add html output to meld3.write (use html=True keyword argument).
+   Code for this largely stolen from Ian Bicking.
+
+   Allow meld identifiers to be preserved during meld3.write (use
+   preserve_meldids=True keyword argument).
+
+0.1
+
+   Initial release.
+
+
