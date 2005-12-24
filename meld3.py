@@ -1,5 +1,3 @@
-import copy
-
 from elementtree.ElementTree import _ElementInterface
 from elementtree.ElementTree import TreeBuilder
 from elementtree.ElementTree import XMLTreeBuilder
@@ -70,15 +68,22 @@ class _MeldElementInterface(_ElementInterface):
         _ElementInterface.insert(self, index, element)
         element.parent = self
 
+    # overrides to support subclassing (use correct factories)
+    def makeelement(self, tag, attrib):
+        return _MeldElementInterface(tag, attrib)
+
     # meld-specific
     def _meld_helper(self):
         return _MeldHelper(self)
 
     meld = property(_meld_helper)
 
-    def clone(self):
-        element = copy.deepcopy(self)
-        element.parent = None
+    def clone(self, parent=None):
+        element = self.makeelement(self.tag, self.attrib.copy())
+        if parent is not None:
+            parent.append(element)
+        for child in self.getchildren():
+            child.clone(element)
         return element
     
     def remove(self):
