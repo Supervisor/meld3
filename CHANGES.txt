@@ -1,5 +1,8 @@
 0.2
 
+   Avoid use of deepcopy in clone() method (much speedier to explicitly 
+   recurse).
+
    Add html output to meld3.write (use html=True keyword argument).
    Code for this largely stolen from Ian Bicking.
 
