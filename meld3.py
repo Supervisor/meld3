@@ -249,12 +249,14 @@ def _write_html(file, node, encoding, namespaces, preserve_meldids):
 def test(filename):
     root = parse(open(filename, 'r'))
     ob = root.meld['tr']
-    values = [('a', '1'), ('b', '2'), ('c', '3')]
+    values = []
+    for thing in range(0, 20):
+        values.append((str(thing), str(thing)))
     for tr, (name, desc) in ob.meld.repeat(values):
         tr.meld['td1'].text = name
         tr.meld['td2'].text = desc
     from cStringIO import StringIO
-    write(root, sys.stdout)
+    write(root, StringIO())
     
 if __name__ == '__main__':
     import sys
