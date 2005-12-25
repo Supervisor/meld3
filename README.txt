@@ -164,19 +164,19 @@ Examples
   its children to HTML.  This feature was inspired by and based on
   code Ian Bicking.  By default, the serialization will include a
   'loose' HTML DTD doctype (this can be overridden with the doctype=
-  argument).  "Empty" shortcut elements such as "<div/>" will be
-  converted to a balanced pair of tags e.g. "<div></div>".  But some
+  argument).  "Empty" shortcut elements such as '<div/>' will be
+  converted to a balanced pair of tags e.g. '<div></div>'.  But some
   HTML tags (defined as per the HTML 4 spec as area, base, basefont,
   br, col, frame, hr, img, input, isindex, link, meta, param) will not
   be followed with a balanced ending tag; only the beginning tag will
   be output.  Additionally, "boolean" tag attributes will not be
   followed with any value.  The "boolean" tags are selected, checked,
   compact, declare, defer, disabled, ismap, multiple, nohref,
-  noresize, noshade, and nowrap.  So the XML input "<input
-  type="checkbox" checked="checked"/>" will be turned into "<input
-  type="checkbox" checked>".  Additionally, 'script' and 'style' tags
+  noresize, noshade, and nowrap.  So the XML input '<input
+  type="checkbox" checked="checked"/>' will be turned into '<input
+  type="checkbox" checked>'.  Additionally, 'script' and 'style' tags
   will not have their contents escaped (e.g. so "&" will not be turned
-  into &amp; when it's iside the textual content of a script or style
+  into '&amp;' when it's iside the textual content of a script or style
   tag.)::
 
     import sys

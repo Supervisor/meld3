@@ -1,3 +1,7 @@
+0.3
+
+  Fix example file.
+
 0.2
 
   Use a method on elements to do writing rather than requiring a user
