@@ -29,23 +29,22 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
 </html>
 """
 from meld3 import parse
-from meld3 import write
 from StringIO import StringIO
 import sys
 
 root = parse(StringIO(xml))
-root.meld['title'].text = 'My document'
-root.meld['form1'].attrib['action'] = './handler'
+root.findmeld('title').text = 'My document'
+root.findmeld('form1').attrib['action'] = './handler'
 data = (
     {'name':'Boys',
      'description':'Ugly'},
     {'name':'Girls',
      'description':'Pretty'},
     )
-iterator = root.meld['tr'].meld.repeat(data)
+iterator = root.findmeld('tr').repeat(data)
 for element, item in iterator:
-    element.meld['td1'].text = item['name']
-    element.meld['td2'].text = item['description']
-root.write(sys.stdout, html=True)
+    element.findmeld('td1').text = item['name']
+    element.findmeld('td2').text = item['description']
+root.write_html(sys.stdout)
 
 
