@@ -47,7 +47,8 @@ Differences from PyMeld
   - Output documents by default do not include any meld3 namespace id
     attributes.  If you wish to preserve meld3 ids (for instance, in
     order to do pipelining of meld3 templates), you can preserve meld
-    ids by passing an option to the meld 'writer'.
+    ids by passing a "pipeline" option to a "write" function
+    (e.g. write_xml, wwrite_xhtml).
 
   - Output is by default performed in "XML mode".  This is unlike
     "HTML mode" because it doesn't "autoclose" most tags with a
@@ -64,7 +65,9 @@ Differences from PyMeld
     been extended by meld3 to perform various functions specific to
     meld3.
 
-  - meld3 elements do not support the __mod__ (%) modifier (yet).
+  - meld3 elements do not support the __mod__ method with a sequence
+    argument; they do support the __mod__ method with a dictionary
+    argument, however.
 
   - meld3 elements support a Meld2-style "repeat" method.
 
@@ -111,25 +114,25 @@ Examples
     from StringIO import StringIO
 
     root = parse(StringIO(xml))
-    root.meld['title'].text = 'My document'
-    root.meld['form1'].attrib['action'] = './handler'
+    root.findmeld('title').text = 'My document'
+    root.findmeld('form1').attrib['action'] = './handler'
     data = (
         {'name':'Boys',
          'description':'Ugly'},
         {'name':'Girls',
          'description':'Pretty'},
         )
-    iterator = root.meld['tr'].meld.repeat(data)
+    iterator = root.findmeld('tr').repeat(data)
     for element, item in iterator:
-        element.meld['td1'].text = item['name']
-        element.meld['td2'].text = item['description']
+        element.findmeld('td1').text = item['name']
+        element.findmeld('td2').text = item['description']
 
   To output the result of the transformations to stdout as XML, we use
   the 'write' method of any element.  Below, we use the root element
   (consider it bound to the value of "root" in the above script)::
 
     import sys
-    root.write(sys.stdout)
+    root.write_xml(sys.stdout)
     ...
     <html:html xmlns:html="http://www.w3.org/1999/xhtml">
       <html:head>
@@ -137,7 +140,7 @@ Examples
         <html:title>My document</html:title>
       </html:head>
       <html:body>
-        <html:div /> 
+        <html:div /> <!-- empty tag -->
         <html:div>
           <html:form action="./handler" method="POST">
           <html:table border="0">
@@ -157,15 +160,27 @@ Examples
       </html:body>
     </html:html>
 
-  Note that comments are currently removed from the output.
-
-  We can also output text in HTML, mode, which removes html namespace
-  identifiers, causes empty tags to be rendered as opening and closing
-  tag pairs, and prevents the closing of certain tags (such as 'img',
-  'base' and 'input')::
+  We can also output text in HTML mode, This serializes the node and
+  its children to HTML.  This feature was inspired by and based on
+  code Ian Bicking.  By default, the serialization will include a
+  'loose' HTML DTD doctype (this can be overridden with the doctype=
+  argument).  "Empty" shortcut elements such as "<div/>" will be
+  converted to a balanced pair of tags e.g. "<div></div>".  But some
+  HTML tags (defined as per the HTML 4 spec as area, base, basefont,
+  br, col, frame, hr, img, input, isindex, link, meta, param) will not
+  be followed with a balanced ending tag; only the beginning tag will
+  be output.  Additionally, "boolean" tag attributes will not be
+  followed with any value.  The "boolean" tags are selected, checked,
+  compact, declare, defer, disabled, ismap, multiple, nohref,
+  noresize, noshade, and nowrap.  So the XML input "<input
+  type="checkbox" checked="checked"/>" will be turned into "<input
+  type="checkbox" checked>".  Additionally, 'script' and 'style' tags
+  will not have their contents escaped (e.g. so "&" will not be turned
+  into &amp; when it's iside the textual content of a script or style
+  tag.)::
 
     import sys
-    root.write(sys.stdout, html=True)
+    root.write_html(sys.stdout)
     ...
     <html>
       <head>
@@ -173,7 +188,7 @@ Examples
         <title>My document</title>
       </head>
       <body>
-        <div></div> 
+        <div></div > <!-- empty tag -->
         <div>
           <form action="./handler" method="POST">
           <table border="0">
@@ -193,46 +208,117 @@ Examples
       </body>
     </html>
 
-Extensions to the ElementTree Element API
+Element API
 
-  meld3 elements support all of the ElementTree API.
+  meld3 elements support all of the ElementTree API.  Other
+  meld-specific methods of elements are as follows::
 
-  meld3 elements support a "clone" method which clones a node and all
-  of its children via a "deepcopy".
+    "clone(parent=None)": clones a node and all of its children via a
+    recursive copy.  If parent is passed in, append the clone to the
+    parent node.
 
-  Elements support a "meld" attribute, which is a helper that can be
-  obtained by getting a hold of the "meld" attribute on any element,
-  like so::
+    "findmeld(name, default=None)": searches the this element and its
+    children for elements that have a 'meld:id' attribute that matches
+    "name"; if no element can be found, return the default.
 
-    element.meld
+    "repeat(iterable, childname=None)": repeats an element with values
+    from an iterable.  If 'childname' is not None, repeat the element on
+    which repeat was called, otherwise find the child element with a
+    'meld:id' matching 'childname' and repeat that.  The element is
+    repeated within its parent element.  This method returns an
+    iterable; the value of each iteration is a two-sequence in the form
+    (newelement, data).  'newelement' is a clone of the template element
+    (including clones of its children) which has already been seated in
+    its parent element in the template. 'data' is a value from the
+    passed in iterable.  Changing 'newelement' (typically based on
+    values from 'data') mutates the element "in place".
 
-  The meld helper is an object that supports the following 
-  methods::
+    "__mod__(other)": Fill in the text values of meld nodes in this
+    element and children recursively; only support dictionarylike
+    "other" operand (sequence operand doesn't seem to make sense here).
 
-    __getitem__(name) -- searches the this element and its children for 
-      elements that have a "meld:id" attribute that matches "name".
+    "write_xml(file, encoding=None, doctype=None, fragment=False, 
+    declaration=True, pipeline=False)":
+    Write XML to 'file' (which can be a filename or filelike object)
+    encoding    -- encoding string (if None, 'utf-8' encoding is assumed)
+                   Must be a recognizable Python encoding type.
+    doctype     -- 3-tuple indicating name, pubid, system of doctype.
+                   The default is to prevent a doctype from being emitted.
+    fragment    -- True if a 'fragment' should be emitted for this node (no
+                   declaration, no doctype).  This causes both the
+                   'declaration' and 'doctype' parameters to become ignored
+                   if provided.
+    declaration -- emit an xml declaration header (including an encoding
+                   if it's not None).  The default is to emit the
+                   doctype.
+    pipeline    -- preserve 'meld' namespace identifiers in output
+                   for use in pipelining
 
-    get(name, default=None) -- searches the this element and its children
-      for elements that have a 'meld:id' attribute that matches
-      "name"; if no element can be found, return the default.
+    "write_xhtml(self, file, encoding=None, doctype=doctype.xhtml,
+    fragment=False, declaration=False, pipeline=False)":
+    Write XHTML to 'file' (which can be a filename or filelike object)
 
-    repeat(iterable, childname=None) -- repeats an element with values
-      from an iterable.  If 'childname' is not None, repeat the
-      element from which the meld helper was obtained, otherwise find
-      the child element with a 'meld:id' matching 'childname' and
-      repeat that.  The element is repeated within its parent element.
-      This method returns an iterable; the value of each iteration is
-      a two-sequence in the form (newelement, data).  'newelement' is
-      a clone of the template element (including clones of its
-      children) which has already been seated in its parent element in
-      the template. 'data' is a value from the passed in iterable.
-      Changing 'newelement' (typically based on values from 'data')
-      mutates the element "in place".
+    encoding    -- encoding string (if None, 'utf-8' encoding is assumed)
+                   Must be a recognizable Python encoding type.
+    doctype     -- 3-tuple indicating name, pubid, system of doctype.
+                   The default is the value of doctype.xhtml (XHTML
+                   'loose').
+    fragment    -- True if a 'fragment' should be emitted for this node (no
+                   declaration, no doctype).  This causes both the
+                   'declaration' and 'doctype' parameters to be ignored.
+    declaration -- emit an xml declaration header (including an encoding
+                   string if 'encoding' is not None)
+    pipeline    -- preserve 'meld' namespace identifiers in output
+                   for use in pipelining
+
+    "write_html(self, file, encoding=None, doctype=doctype.html,fragment=False)":
+    Write HTML to 'file' (which can be a filename or filelike object)
+    encoding    -- encoding string (if None, 'utf-8' encoding is assumed).
+                   Unlike XML output, this is not used in a declaration,
+                   but it is used to do actual character encoding during
+                   output.  Must be a recognizable Python encoding type.
+    doctype     -- 3-tuple indicating name, pubid, system of doctype.
+                   The default is the value of doctype.html (HTML 4.0
+                   'loose')
+    fragment    -- True if a "fragment" should be omitted (no doctype).
+                   This overrides any provided "doctype" parameter if
+                   provided.
+    Namespace'd elements and attributes have their namespaces removed
+    during output when writing HTML, so pipelining cannot be performed.
+    HTML is not valid XML, so an XML declaration header is never emitted.
+
+    In general: For all output methods, comments are preserved in
+    output.  They are also present in the ElementTree node tree (as
+    Comment elements), so beware. Processing instructions (e.g. <?xml
+    version="1.0">) are completely thrown away at parse time and do
+    not exist anywhere in the element tree or in the output (use the
+    declaration= parameter to emit a declaration processing
+    instruction).
+
+Parsing API
+
+  All source documents are turned into element trees using the "parse"
+  function (demonstrated in examples above).
+
+  HTML entities can now be parsed properly (magically) when a DOCTYPE
+  is not supplied in the source of the XML passed to 'parse'.  If your
+  source document does not contain a DOCTYPE declaration, the DOCTYPE
+  is set to 'loose' XHTML 'by magic'.  If your source document does
+  contain a DOCTYPE declaration, the existing DOCTYPE is used (and
+  HTML entities thus may or may not work as a result, depending on the
+  DOCTYPE).  To prevent this behavior, pass a false value to the
+  xhtml= parameter of the 'parse' function.  This in no way effects
+  output, which is independent of parsing.  This does not imply that
+  any *non*-HTML entity can be parsed in the input stream under any
+  circumstance without having it defined it in your source document.
+
+  Using duplicate meld identifiers on separate elements in the source
+  document causes a ValueError to be raised at parse time.
 
 To Do
 
   The API is by no means fixed in stone.  It is apt to change at any
-  time; this is really a very alpha release.
+  time.
 
   This implementation depends on classes internal to ElementTree and
   hasn't been tested with cElementTree or lxml, and almost certainly
