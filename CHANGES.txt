@@ -1,13 +1,131 @@
 0.2
 
-   Avoid use of deepcopy in clone() method (much speedier to explicitly 
-   recurse).
+  Use a method on elements to do writing rather than requiring a user
+  call a "write" function.  The equivalent is now a method of the
+  element named "write_xml".  element.write_xml(file) performs a write
+  of XML into the file.  element.write_xml(...) includes an XML
+  declaration in its serialization (but no doctype, at least by
+  default).
 
-   Add html output to meld3.write (use html=True keyword argument).
-   Code for this largely stolen from Ian Bicking.
+  Various non-XML serialization methods have been added.  The default
+  arguments of these serialization methods are what I'm guessing are
+  the most common cases desired for various kinds of qoutput::
 
-   Allow meld identifiers to be preserved during meld3.write (use
-   preserve_meldids=True keyword argument).
+     element.write_html(...).  This serializes the node and its
+     children to HTML.  This feature was inspired by and based on code
+     Ian Bicking.  By default, the serialization will include a
+     'loose' HTML DTD doctype (this can be overridden with the
+     doctype= argument).  "Empty" shortcut elements such as "<div/>"
+     will be converted to a balanced pair of tags e.g. "<div></div>".
+     But some HTML tags (defined as per the HTML 4 spec as area, base,
+     basefont, br, col, frame, hr, img, input, isindex, link, meta,
+     param) will not be followed with a balanced ending tag; only the
+     beginning tag will be output.  Additionally, "boolean" tag
+     attributes will not be followed with any value.  The "boolean"
+     tags are selected, checked, compact, declare, defer, disabled,
+     ismap, multiple, nohref, noresize, noshade, and nowrap.  So the
+     XML input "<input type="checkbox" checked="checked"/>" will be
+     turned into "<input type="checkbox" checked>".  Additionally,
+     'script' and 'style' tags will not have their contents escaped
+     (e.g. so "&" will not be turned into &amp; when it's iside the
+     textual content of a script or style tag.)
+
+     element.write_xhtml(...).  This serializes the node and its
+     children to XHTML.  By default, the serialization will include a
+     'loose' XHTML doctype (this can be overridden with the doctype=
+     argument).  No XML declaration is included in the serialization by
+     default.  If you want to serialize an XML declaration, pass
+     'declaration=True'.
+
+  All serialization methods have a number of optional
+  arguments::
+
+     fragment: If this is true, serialize an element as a "fragment".
+     When an element is serialized as a fragment, it will not include
+     either a declaration nor a doctype (the declaration= and doctype=
+     arguments will be ignored).
+
+     doctype: Output a custom doctype during the writing of XML and
+     HTML (see write, write_xml, write_xhtml, and write_html).  Use
+     the constants in meld3.doctype (xhtml, xhtml_strict, html, and
+     html_strict) to avoid passing a literal 3-tuple of (name, pubid,
+     system) as the doctype parameter.  If fragment=True is specified
+     for serialization, this argument has no effect.
+
+     encoding: Specify a character encoding to be used during writing
+     (see write, write_xml write_html, and write_xhtml).  The encoding
+     must be a valid Python codec name (e.g. 'utf-8').  If this is
+     provided for write_xml and write_xhtml, and the XML declaration
+     is serialized, the declaration will include the encoding.  If an
+     encoding is passed to write_html, no explicit encoding is
+     included in the declaration but the serialization will be done
+     with utf-8.
+
+  XML serializations (write_xml and write_xhtml) have the
+  aforementioned arguments but expose two additional optional
+  arguments::
+
+     declaration: If this is true, an xml declaration header is output
+     during the writing of XML (see write, write_xml, and
+     write_xhtml).  If the encoding is specified, and the
+     serialization is meant to include an XML declaration (via
+     declaration=), the declaration will include the encoding.  If
+     'fragment=True' is specified for serialization, this argument has
+     no effect.  It doesn't matter if your input document had a
+     declaration header; this option must be used to control
+     declaration output.
+
+     pipeline: If this is true, allow meld identifiers to be preserved
+     during the writing of XML and XHTML (see write, write_xml and
+     write_xhtml).  meld identifiers cannot be preserved on HTML
+     serializations because HTML doesn't understand namespaces.
+
+  HTML entities can now be parsed properly (magically) when a DOCTYPE
+  is not supplied in the source of the XML passed to 'parse'.  If your
+  source document does not contain a DOCTYPE declaration, the DOCTYPE
+  is set to 'loose' XHTML 'by magic'.  If your source document does
+  contain a DOCTYPE declaration, the existing DOCTYPE is used (and
+  HTML entities thus may or may not work as a result, depending on the
+  DOCTYPE).  To prevent this behavior, pass a false value to the
+  xhtml= parameter of the 'parse' function.  This in no way effects
+  output, which is independent of parsing.  This does not imply that
+  any *non*-HTML entity can be parsed in the input stream under any
+  circumstance without having it defined it in your source document.
+
+  Comments are now preserved in output.  They are also present in the
+  ElementTree node tree (as Comment elements), so beware. Processing
+  instructions (e.g. <?xml version="1.0">) are completely thrown away
+  at parse time and do not exist anywhere in the element tree.
+
+  Avoid use of deepcopy in the clone() method of elements (much
+  speedier to explicitly recurse).
+
+  The "meld helper" namespace (e.g. element.meld) is no longer present
+  or supported.  Instead of using element.meld['foo'] to find an
+  element with the meld:id "foo", use element.findmeld('foo').  This
+  returns None if the node cannot be found.  Instead of using
+  element.meld.get('foo', 'somedefault'), use element.findmeld('foo',
+  'somedefault').  Instead of using element.meld.repeat(...), use
+  element.repeat(...).
+
+  Elements now support a __mod__ which can accept a dictionarylike
+  operand and which causes the text of elements with meld ids which
+  match the keys in the dictionary to be set to the key's value in the
+  dictionary.  For example, if an element contains subelements with
+  the meld ids "foo" and "bar", you can replace those nodes' text
+  values with the following::
+    
+    element % {'foo':'foo text', 'bar':'bar text'}
+
+  __mod__ will not accept a non-dictionary-like object (such as a list
+  or tuple).  __mod__ will never raise an error unless you pass it a
+  non-dictionary-like object; if it can't find a node corresponding to
+  a key in the dictionary, it moves on to the next key.  Only the text
+  values of the nodes which are found during this process are
+  replaced.
+
+  Using duplicate meld identifiers on separate elements in the document
+  now causes a ValueError to be raised at parse time.
 
 0.1
 

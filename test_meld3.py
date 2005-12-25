@@ -1,5 +1,6 @@
 import unittest
 from StringIO import StringIO
+import re
 
 _SIMPLE_XML = r"""<?xml version="1.0"?>
 <root xmlns:meld="http://www.plope.com/software/meld3">
@@ -9,22 +10,19 @@ _SIMPLE_XML = r"""<?xml version="1.0"?>
        <description meld:id="description">Description</description>
     </item>
   </list>
-</root>
-"""
+</root>"""
 
 _SIMPLE_XHTML = r"""<html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:meld="http://www.plope.com/software/meld3">
    <body meld:id="body">Hello!</body>
-</html>
-"""
+</html>"""
 
 _EMPTYTAGS_HTML = """<html>
   <body>
     <area/><base/><basefont/><br/><col/><frame/><hr/><img/><input/><isindex/>
     <link/><meta/><param/>
   </body>
-</html>
-"""
+</html>"""
 
 _BOOLEANATTRS_HTML= """<html>
   <body>
@@ -41,8 +39,16 @@ _BOOLEANATTRS_HTML= """<html>
   <tag noshade="true"/>
   <tag nowrap="true"/>
   </body>
-</html>
-"""
+</html>"""
+
+_ENTITIES_XHTML= r"""
+<html>
+<head></head>
+<body>
+  <!-- test entity references -->
+  <p>&nbsp;</p>
+</body>
+</html>"""
 
 _COMPLEX_XHTML = r"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
@@ -50,13 +56,24 @@ _COMPLEX_XHTML = r"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
       xmlns:bar="http://foo/bar">
   <head>
     <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
-    <title meld:id="title">This is the title</title>
+    <title meld:id="title">This will be escaped in html output: &amp;</title>
+    <script>this won't be escaped in html output: &amp;</script>
+    <script type="text/javascript">
+            //<![CDATA[
+              // this won't be escaped in html output
+              function match(a,b) {
+                 if (a < b && a > 0) then { return 1 }
+                }
+             //]]>
+    </script>
+    <style>this won't be escaped in html output: &amp;</style>
   </head>
   <!-- a comment -->
   <body>
     <div bar:baz="slab"/>
     <div meld:id="content_well">
       <form meld:id="form1" action="." method="POST">
+      <img src="foo.gif"/>
       <table border="0" meld:id="table1">
         <tbody meld:id="tbody">
           <tr meld:id="tr" class="foo">
@@ -65,73 +82,66 @@ _COMPLEX_XHTML = r"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
           </tr>
         </tbody>
       </table>
+      <input type="submit" name="submit" value=" Next "/>
       </form>
     </div>
   </body>
-</html>
-"""
+</html>"""
 
-class MeldHelperTests(unittest.TestCase):
-    def _getTargetClass(self):
-        from meld3 import _MeldHelper
-        return _MeldHelper
-
-    def _makeOne(self, *arg, **kw):
-        klass = self._getTargetClass()
-        return klass(*arg, **kw)
-
+class MeldAPITests(unittest.TestCase):
     def _makeElement(self, string):
         data = StringIO(string)
         from meld3 import parse
         return parse(data)
 
-    def test_ctor(self):
-        helper = self._makeOne('foo')
-        self.assertEqual(helper.element, 'foo')
-
-    def test__getitem__(self):
+    def test_findmeld(self):
         root = self._makeElement(_SIMPLE_XML)
-        helper = self._makeOne(root)
-        item = helper['item']
+        item = root.findmeld('item')
         self.assertEqual(item.tag, 'item')
-        name = helper['name']
+        name = root.findmeld('name')
         self.assertEqual(name.text, 'Name')
 
-    def test_get(self):
+    def test_findmeld_default(self):
         root = self._makeElement(_SIMPLE_XML)
-        helper = self._makeOne(root)
-        item = helper.get('item')
+        item = root.findmeld('item')
         self.assertEqual(item.tag, 'item')
-        unknown = helper.get('unknown', 'foo')
+        unknown = root.findmeld('unknown', 'foo')
         self.assertEqual(unknown, 'foo')
+        self.assertEqual(root.findmeld('unknown'), None)
 
     def test_repeat_nochild(self):
         root = self._makeElement(_SIMPLE_XML)
-        helper = self._makeOne(root)
-        item = helper['item']
+        item = root.findmeld('item')
         self.assertEqual(item.tag, 'item')
         data = [{'name':'Jeff Buckley', 'description':'ethereal'},
                 {'name':'Slipknot', 'description':'heavy'}]
-        for element, d in item.meld.repeat(data):
-            element.meld['name'].text = d['name']
-            element.meld['description'].text = d['description']
+        for element, d in item.repeat(data):
+            element.findmeld('name').text = d['name']
+            element.findmeld('description').text = d['description']
         self.assertEqual(item[0].text, 'Jeff Buckley')
         self.assertEqual(item[1].text, 'ethereal')
 
     def test_repeat_child(self):
         root = self._makeElement(_SIMPLE_XML)
-        helper = self._makeOne(root)
-        list = helper['list']
+        list = root.findmeld('list')
         self.assertEqual(list.tag, 'list')
         data = [{'name':'Jeff Buckley', 'description':'ethereal'},
                 {'name':'Slipknot', 'description':'heavy'}]
-        for element, d in list.meld.repeat(data, 'item'):
-            element.meld['name'].text = d['name']
-            element.meld['description'].text = d['description']
+        for element, d in list.repeat(data, 'item'):
+            element.findmeld('name').text = d['name']
+            element.findmeld('description').text = d['description']
         self.assertEqual(list[0][0].text, 'Jeff Buckley')
         self.assertEqual(list[0][1].text, 'ethereal')
         self.assertEqual(list[1][0].text, 'Slipknot')
         self.assertEqual(list[1][1].text, 'heavy')
+
+    def test_mod(self):
+        root = self._makeElement(_SIMPLE_XML)
+        root % {'description':'foo', 'name':'bar'}
+        name = root.findmeld('name')
+        self.assertEqual(name.text, 'bar')
+        desc = root.findmeld('description')
+        self.assertEqual(desc.text, 'foo')
 
 class MeldElementInterfaceTests(unittest.TestCase):
     def _getTargetClass(self):
@@ -177,13 +187,6 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(div[1].tag, 'span')
         self.assertEqual(div[1].attrib, {})
         self.assertEqual(div[1].parent, div)
-
-    def test_meldproperty(self):
-        div = self._makeOne('div', {'id':'thediv'})
-        meld = div.meld
-        from meld3 import _MeldHelper
-        self.assertEqual(meld.__class__, _MeldHelper)
-        self.assertEqual(meld.element, div)
 
     def test_clone(self):
         div = self._makeOne('div', {'id':'thediv'})
@@ -288,7 +291,8 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(title.tag, xhtml_ns % 'title')
         self.assertEqual(title.attrib[_MELD_ID], 'title')
         self.assertEqual(title.parent, head)
-        body = root[1]
+        comment = root[1]
+        body = root[2]
         self.assertEqual(body.tag, xhtml_ns % 'body')
         self.assertEqual(body.attrib, {})
         self.assertEqual(body.parent, root)
@@ -310,7 +314,11 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(form.attrib['method'], 'POST')
         self.assertEqual(form.parent, div2)
 
-        table = form[0]
+        img = form[0]
+        self.assertEqual(img.tag, xhtml_ns % 'img')
+        self.assertEqual(img.parent, form)
+
+        table = form[1]
         self.assertEqual(table.tag, xhtml_ns % 'table')
         self.assertEqual(table.attrib[_MELD_ID], 'table1')
         self.assertEqual(table.attrib['border'], '0')
@@ -337,18 +345,62 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(td2.attrib[_MELD_ID], 'td2')
         self.assertEqual(td2.parent, tr)
 
+    def test_dupe_meldids_fails(self):
+        meld_ns = "http://www.plope.com/software/meld3"
+        repeated = ('<html xmlns:meld="%s" meld:id="repeat">'
+                    '<body meld:id="repeat"/></html>' % meld_ns)
+        from meld3 import parse
+        data = StringIO(repeated)
+        self.assertRaises(ValueError, parse, data)
+
+    def test_nonxhtml_parsing(self):
+        from meld3 import parse
+        from meld3 import _MELD_ID
+        data = StringIO(_SIMPLE_XML)
+        root = parse(data, xhtml=False)
+        self.assertEqual(root.tag, 'root')
+        self.assertEqual(root.parent, None)
+        from xml.parsers import expat
+        self.assertRaises(expat.error, parse, StringIO(_ENTITIES_XHTML),
+                          False)
 
 class WriterTests(unittest.TestCase):
-    def test_write_simple_xml(self):
+    def _parse(self, xml):
         from meld3 import parse
-        from meld3 import write
-        data = StringIO(_SIMPLE_XML)
+        data = StringIO(xml)
         root = parse(data)
+        return root
+
+    def _write(self, fn, **kw):
         out = StringIO()
-        write(root, out)
+        fn(out, **kw)
         out.seek(0)
         actual = out.read()
-        expected = """<root>
+        return actual
+
+    def _write_xml(self, node, **kw):
+        return self._write(node.write_xml, **kw)
+
+    def _write_html(self, node, **kw):
+        return self._write(node.write_html, **kw)
+
+    def _write_xhtml(self, node, **kw):
+        return self._write(node.write_xhtml, **kw)
+
+    def assertNormalizedXMLEqual(self, a, b):
+        a = normalize_xml(a)
+        b = normalize_xml(b)
+        self.assertEqual(a, b)
+
+    def assertNormalizedHTMLEqual(self, a, b):
+        a = normalize_html(a)
+        b = normalize_html(b)
+        self.assertEqual(a, b)
+
+    def test_write_simple_xml(self):
+        root = self._parse(_SIMPLE_XML)
+        actual = self._write_xml(root)
+        expected = """<?xml version="1.0"?><root>
   <list>
     <item>
        <name>Name</name>
@@ -356,16 +408,13 @@ class WriterTests(unittest.TestCase):
     </item>
   </list>
 </root>"""
-        self.assertEqual(actual, expected)
+        self.assertNormalizedXMLEqual(actual, expected)
 
-        for el, data in root.meld['item'].meld.repeat(((1,2),)):
-            el.meld['name'].text = str(data[0])
-            el.meld['description'].text = str(data[1])
-        out = StringIO()
-        write(root, out)
-        out.seek(0)
-        actual = out.read()
-        expected = """<root>
+        for el, data in root.findmeld('item').repeat(((1,2),)):
+            el.findmeld('name').text = str(data[0])
+            el.findmeld('description').text = str(data[1])
+        actual = self._write_xml(root)
+        expected = """<?xml version="1.0"?><root>
   <list>
     <item>
        <name>1</name>
@@ -373,55 +422,51 @@ class WriterTests(unittest.TestCase):
     </item>
   </list>
 </root>"""
-        self.assertEqual(actual, expected)
+        self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml(self):
-        from meld3 import parse
-        from meld3 import write
-        data = StringIO(_SIMPLE_XHTML)
-        root = parse(data)
-        out = StringIO()
-        write(root, out)
-        out.seek(0)
-        actual = out.read()
-        expected = """<html:html xmlns:html="http://www.w3.org/1999/xhtml">
+        root = self._parse(_SIMPLE_XHTML)
+        actual = self._write_xhtml(root)
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        <html:html xmlns:html="http://www.w3.org/1999/xhtml">
    <html:body>Hello!</html:body>
 </html:html>"""
-        self.assertEqual(actual, expected)
+        self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_as_html(self):
-        from meld3 import parse
-        from meld3 import write
-        data = StringIO(_SIMPLE_XHTML)
-        root = parse(data)
-        out = StringIO()
-        write(root, out, html=True)
-        out.seek(0)
-        actual = out.read()
-        expected = """<html>
+        root = self._parse(_SIMPLE_XHTML)
+        actual = self._write_html(root)
+        expected = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
    <body>Hello!</body>
 </html>"""
-        self.assertEqual(actual, expected)
+        self.assertNormalizedHTMLEqual(actual, expected)
 
     def test_write_complex_xhtml_as_html(self):
-        from meld3 import parse
-        from meld3 import write
-        data = StringIO(_COMPLEX_XHTML)
-        root = parse(data)
-        out = StringIO()
-        write(root, out, html=True)
-        out.seek(0)
-        actual = out.read()
-        expected = """<html>
+        root = self._parse(_COMPLEX_XHTML)
+        actual = self._write_html(root)
+        expected = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
   <head>
-    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"></meta>
-    <title>This is the title</title>
+    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+    <title>This will be escaped in html output: &amp;</title>
+    <script>this won't be escaped in html output: &</script>
+    <script type="text/javascript">
+            //
+              // this won't be escaped in html output
+              function match(a,b) {
+                 if (a < b && a > 0) then { return 1 }
+                }
+             //
+    </script>
+    <style>this won't be escaped in html output: &</style>
   </head>
-  
+  <!-- a comment -->
   <body>
-    <div ns0:baz="slab" xmlns:ns0="http://foo/bar"></div>
+    <div></div>
     <div>
       <form action="." method="POST">
+      <img src="foo.gif">
       <table border="0">
         <tbody>
           <tr class="foo">
@@ -430,22 +475,66 @@ class WriterTests(unittest.TestCase):
           </tr>
         </tbody>
       </table>
+      <input name="submit" type="submit" value=" Next ">
       </form>
     </div>
   </body>
 </html>"""
-        self.assertEqual(actual, expected)
+          
+        self.assertNormalizedHTMLEqual(actual, expected)
+
+    def test_write_complex_xhtml_as_xhtml(self):
+        # I'm not entirely sure if the cdata "script" quoting in this
+        # test is entirely correct for XHTML.  Ryan Tomayko suggests
+        # that escaped entities are handled properly in script tags by
+        # XML-aware browsers at
+        # http://sourceforge.net/mailarchive/message.php?msg_id=10835582
+        # but I haven't tested it at all.  ZPT does not seem to do
+        # this; it outputs unescaped data.
+        root = self._parse(_COMPLEX_XHTML)
+        actual = self._write_xhtml(root)
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html:html xmlns:html="http://www.w3.org/1999/xhtml">
+  <html:head>
+    <html:meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
+    <html:title>This will be escaped in html output: &amp;</html:title>
+    <html:script>this won't be escaped in html output: &amp;</html:script>
+    <html:script type="text/javascript">
+            //
+              // this won't be escaped in html output
+              function match(a,b) {
+                 if (a &lt; b &amp;&amp; a &gt; 0) then { return 1 }
+              }
+           //
+    </html:script>
+    <html:style>this won't be escaped in html output: &amp;</html:style>
+  </html:head>
+  <!-- a comment -->
+  <html:body>
+    <html:div ns1:baz="slab" xmlns:ns1="http://foo/bar" />
+    <html:div>
+      <html:form action="." method="POST">
+      <html:img src="foo.gif" />
+      <html:table border="0">
+        <html:tbody>
+          <html:tr class="foo">
+            <html:td>Name</html:td>
+             <html:td>Description</html:td>
+           </html:tr>
+         </html:tbody>
+      </html:table>
+      <html:input name="submit" type="submit" value=" Next " />
+      </html:form>
+    </html:div>
+  </html:body>
+</html:html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_emptytags_html(self):
-        from meld3 import parse
-        from meld3 import write
-        data = StringIO(_EMPTYTAGS_HTML)
-        root = parse(data)
-        out = StringIO()
-        write(root, out, html=True)
-        out.seek(0)
-        actual = out.read()
-        expected = """<html>
+        root = self._parse(_EMPTYTAGS_HTML)
+        actual = self._write_html(root)
+        expected = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
   <body>
     <area><base><basefont><br><col><frame><hr><img><input><isindex>
     <link><meta><param>
@@ -454,15 +543,10 @@ class WriterTests(unittest.TestCase):
         self.assertEqual(actual, expected)
         
     def test_write_booleanattrs_html(self):
-        from meld3 import parse
-        from meld3 import write
-        data = StringIO(_BOOLEANATTRS_HTML)
-        root = parse(data)
-        out = StringIO()
-        write(root, out, html=True)
-        out.seek(0)
-        actual = out.read()
-        expected = """<html>
+        root = self._parse(_BOOLEANATTRS_HTML)
+        actual = self._write_html(root)
+        expected = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
   <body>
   <tag selected></tag>
   <tag checked></tag>
@@ -478,32 +562,21 @@ class WriterTests(unittest.TestCase):
   <tag nowrap></tag>
   </body>
 </html>"""
-        self.assertEqual(actual, expected)
+        self.assertNormalizedHTMLEqual(actual, expected)
 
-    def test_write_simple_xhtml_preserve_meldids(self):
-        from meld3 import parse
-        from meld3 import write
-        data = StringIO(_SIMPLE_XHTML)
-        root = parse(data)
-        out = StringIO()
-        write(root, out, preserve_meldids=True)
-        out.seek(0)
-        actual = out.read()
-        expected = """<html:html xmlns:html="http://www.w3.org/1999/xhtml">
-   <html:body ns1:id="body" xmlns:ns1="http://www.plope.com/software/meld3">Hello!</html:body>
-</html:html>"""
-        self.assertEqual(actual, expected)
+    def test_write_simple_xhtml_pipeline(self):
+        root = self._parse(_SIMPLE_XHTML)
+        actual = self._write_xhtml(root, pipeline=True)
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        <html:html xmlns:html="http://www.w3.org/1999/xhtml">
+        <html:body ns1:id="body" xmlns:ns1="http://www.plope.com/software/meld3">Hello!</html:body>
+        </html:html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
 
-    def test_write_simple_xml_preserve_meldids(self):
-        from meld3 import parse
-        from meld3 import write
-        data = StringIO(_SIMPLE_XML)
-        root = parse(data)
-        out = StringIO()
-        write(root, out, preserve_meldids=True)
-        out.seek(0)
-        actual = out.read()
-        expected = """<root>
+    def test_write_simple_xml_pipeline(self):
+        root = self._parse(_SIMPLE_XML)
+        actual = self._write_xml(root, pipeline=True)
+        expected = """<?xml version="1.0"?><root>
   <list ns0:id="list" xmlns:ns0="http://www.plope.com/software/meld3">
     <item ns0:id="item">
        <name ns0:id="name">Name</name>
@@ -511,14 +584,194 @@ class WriterTests(unittest.TestCase):
     </item>
   </list>
 </root>"""
-        self.assertEqual(actual, expected)
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xml_override_encoding(self):
+        root = self._parse(_SIMPLE_XML)
+        from meld3 import doctype
+        actual = self._write_xml(root, encoding="latin-1")
+        expected = """<?xml version="1.0" encoding="latin-1"?><root>
+  <list>
+    <item>
+       <name>Name</name>
+       <description>Description</description>
+    </item>
+  </list>
+</root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+        
+    def test_write_simple_xml_as_fragment(self):
+        root = self._parse(_SIMPLE_XML)
+        from meld3 import doctype
+        actual = self._write_xml(root, fragment=True)
+        expected = """<root>
+  <list>
+    <item>
+       <name>Name</name>
+       <description>Description</description>
+    </item>
+  </list>
+</root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+        
+    def test_write_simple_xml_with_doctype(self):
+        root = self._parse(_SIMPLE_XML)
+        from meld3 import doctype
+        actual = self._write_xml(root, doctype=doctype.xhtml)
+        expected = """<?xml version="1.0"?>
+        <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><root>
+  <list>
+    <item>
+       <name>Name</name>
+       <description>Description</description>
+    </item>
+  </list>
+</root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xml_doctype_nodeclaration(self):
+        root = self._parse(_SIMPLE_XML)
+        from meld3 import doctype
+        actual = self._write_xml(root, declaration=False,
+                                 doctype=doctype.xhtml)
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><root>
+  <list>
+    <item>
+       <name>Name</name>
+       <description>Description</description>
+    </item>
+  </list>
+</root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xml_fragment_kills_doctype_and_declaration(self):
+        root = self._parse(_SIMPLE_XML)
+        from meld3 import doctype
+        actual = self._write_xml(root, declaration=True,
+                                 doctype=doctype.xhtml, fragment=True)
+        expected = """<root>
+  <list>
+    <item>
+       <name>Name</name>
+       <description>Description</description>
+    </item>
+  </list>
+</root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xhtml_override_encoding(self):
+        root = self._parse(_SIMPLE_XHTML)
+        from meld3 import doctype
+        actual = self._write_xhtml(root, encoding="latin-1", declaration=True)
+        expected = """<?xml version="1.0" encoding="latin-1"?>
+        <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        <html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xhtml_as_fragment(self):
+        root = self._parse(_SIMPLE_XHTML)
+        from meld3 import doctype
+        actual = self._write_xhtml(root, fragment=True)
+        expected = """<html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+        
+    def test_write_simple_xhtml_with_doctype(self):
+        root = self._parse(_SIMPLE_XHTML)
+        from meld3 import doctype
+        actual = self._write_xhtml(root, doctype=doctype.xhtml)
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        <html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xhtml_doctype_nodeclaration(self):
+        root = self._parse(_SIMPLE_XHTML)
+        from meld3 import doctype
+        actual = self._write_xhtml(root, declaration=False,
+                                 doctype=doctype.xhtml)
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        <html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xhtml_fragment_kills_doctype_and_declaration(self):
+        root = self._parse(_SIMPLE_XHTML)
+        from meld3 import doctype
+        actual = self._write_xhtml(root, declaration=True,
+                                 doctype=doctype.xhtml, fragment=True)
+        expected = """<html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xhtml_as_html_fragment(self):
+        root = self._parse(_SIMPLE_XHTML)
+        from meld3 import doctype
+        actual = self._write_html(root, fragment=True)
+        expected = """<html><body>Hello!</body></html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+        
+    def test_write_simple_xhtml_with_doctype_as_html(self):
+        root = self._parse(_SIMPLE_XHTML)
+        actual = self._write_html(root)
+        expected = """
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><body>Hello!</body></html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_simple_xhtml_as_html_new_doctype(self):
+        root = self._parse(_SIMPLE_XHTML)
+        from meld3 import doctype
+        actual = self._write_html(root, doctype=doctype.html_strict)
+        expected = """
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><body>Hello!</body></html>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_write_entities_xhtml_no_doctype(self):
+        root = self._parse(_ENTITIES_XHTML)
+        # this will be considered an XHTML document by default; we needn't
+        # declare a doctype
+        actual = self._write_xhtml(root)
+        expected =r"""<html>
+<head></head>
+<body>
+  <!-- test entity references -->
+  <p>&nbsp;</p>
+</body>
+</html>"""
+
+    def test_write_entities_xhtml_with_doctype(self):
+        dt = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
+        root = self._parse(dt + _ENTITIES_XHTML)
+        actual = self._write_xhtml(root)
+        expected =r"""<html>
+<head></head>
+<body>
+  <!-- test entity references -->
+  <p>&nbsp;</p>
+</body>
+</html>"""
+
+    def test_unknown_entity(self):
+        from xml.parsers import expat
+        self.assertRaises(expat.error, self._parse,
+                          '<html><head></head><body>&fleeb;</body></html>')
+
+def normalize_html(s):
+    s = re.sub(r"[ \t]+", " ", s)
+    s = re.sub(r"/>", ">", s)
+    return s
+
+def normalize_xml(s):
+    s = re.sub(r"\s+", " ", s)
+    s = re.sub(r"(?s)\s+<", "<", s)
+    s = re.sub(r"(?s)>\s+", ">", s)
+    return s
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest( unittest.makeSuite( MeldHelperTests ) )
+    suite.addTest( unittest.makeSuite( MeldAPITests ) )
     suite.addTest( unittest.makeSuite( MeldElementInterfaceTests ) )
     suite.addTest( unittest.makeSuite( ParserTests ) )
-    suite.addTest( unittest.makeSuite( WriterTests ) )
+    suite.addTest( unittest.makeSuite( WriterTests) )
     return suite
 
 def main():

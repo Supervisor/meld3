@@ -7,6 +7,7 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
     <title meld:id="title">This is the title</title>
   </head>
   <body>
+    <div/> <!-- empty tag -->
     <div meld:id="content_well">
       <form meld:id="form1" action="." method="POST">
       <table border="0" meld:id="table1">
@@ -21,6 +22,7 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
           </tr>
         </tbody>
       </table>
+      <input type="submit" name="next" value=" Next "/>
       </form>
     </div>
   </body>
@@ -44,5 +46,6 @@ iterator = root.meld['tr'].meld.repeat(data)
 for element, item in iterator:
     element.meld['td1'].text = item['name']
     element.meld['td2'].text = item['description']
-write(root, sys.stdout)
+root.write(sys.stdout, html=True)
+
 
