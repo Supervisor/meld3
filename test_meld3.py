@@ -739,7 +739,7 @@ class WriterTests(unittest.TestCase):
         root = self._parse(_SIMPLE_XHTML)
         from meld3 import doctype
         actual = self._write_xhtml(root, doctype=doctype.xhtml)
-        expected = """!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_doctype_nodeclaration(self):
