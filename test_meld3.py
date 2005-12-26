@@ -494,10 +494,7 @@ class WriterTests(unittest.TestCase):
     def test_write_simple_xhtml(self):
         root = self._parse(_SIMPLE_XHTML)
         actual = self._write_xhtml(root)
-        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-        <html:html xmlns:html="http://www.w3.org/1999/xhtml">
-   <html:body>Hello!</html:body>
-</html:html>"""
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_as_html(self):
@@ -561,40 +558,40 @@ class WriterTests(unittest.TestCase):
         root = self._parse(_COMPLEX_XHTML)
         actual = self._write_xhtml(root)
         expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html:html xmlns:html="http://www.w3.org/1999/xhtml">
-  <html:head>
-    <html:meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
-    <html:title>This will be escaped in html output: &amp;</html:title>
-    <html:script>this won't be escaped in html output: &amp;</html:script>
-    <html:script type="text/javascript">
+<html>
+  <head>
+    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
+    <title>This will be escaped in html output: &amp;</title>
+    <script>this won't be escaped in html output: &amp;</script>
+    <script type="text/javascript">
             //
               // this won't be escaped in html output
               function match(a,b) {
                  if (a &lt; b &amp;&amp; a &gt; 0) then { return 1 }
-              }
-           //
-    </html:script>
-    <html:style>this won't be escaped in html output: &amp;</html:style>
-  </html:head>
-  <!-- a comment -->
-  <html:body>
-    <html:div ns1:baz="slab" xmlns:ns1="http://foo/bar" />
-    <html:div>
-      <html:form action="." method="POST">
-      <html:img src="foo.gif" />
-      <html:table border="0">
-        <html:tbody>
-          <html:tr class="foo">
-            <html:td>Name</html:td>
-             <html:td>Description</html:td>
-           </html:tr>
-         </html:tbody>
-      </html:table>
-      <html:input name="submit" type="submit" value=" Next " />
-      </html:form>
-    </html:div>
-  </html:body>
-</html:html>"""
+                }
+             //
+    </script>
+    <style>this won't be escaped in html output: &amp;</style>
+  </head>
+  <!--  a comment  -->
+  <body>
+    <div ns0:baz="slab" xmlns:ns0="http://foo/bar" />
+    <div>
+      <form action="." method="POST">
+      <img src="foo.gif" />
+      <table border="0">
+        <tbody>
+          <tr class="foo">
+            <td>Name</td>
+            <td>Description</td>
+          </tr>
+        </tbody>
+      </table>
+      <input name="submit" type="submit" value=" Next " />
+      </form>
+    </div>
+  </body>
+</html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_emptytags_html(self):
@@ -634,10 +631,7 @@ class WriterTests(unittest.TestCase):
     def test_write_simple_xhtml_pipeline(self):
         root = self._parse(_SIMPLE_XHTML)
         actual = self._write_xhtml(root, pipeline=True)
-        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-        <html:html xmlns:html="http://www.w3.org/1999/xhtml">
-        <html:body ns1:id="body" xmlns:ns1="http://www.plope.com/software/meld3">Hello!</html:body>
-        </html:html>"""
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body ns0:id="body" xmlns:ns0="http://www.plope.com/software/meld3">Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xml_pipeline(self):
@@ -731,24 +725,21 @@ class WriterTests(unittest.TestCase):
         root = self._parse(_SIMPLE_XHTML)
         from meld3 import doctype
         actual = self._write_xhtml(root, encoding="latin-1", declaration=True)
-        expected = """<?xml version="1.0" encoding="latin-1"?>
-        <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-        <html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        expected = """<?xml version="1.0" encoding="latin-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_as_fragment(self):
         root = self._parse(_SIMPLE_XHTML)
         from meld3 import doctype
         actual = self._write_xhtml(root, fragment=True)
-        expected = """<html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        expected = """<html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
         
     def test_write_simple_xhtml_with_doctype(self):
         root = self._parse(_SIMPLE_XHTML)
         from meld3 import doctype
         actual = self._write_xhtml(root, doctype=doctype.xhtml)
-        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-        <html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        expected = """!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_doctype_nodeclaration(self):
@@ -756,8 +747,7 @@ class WriterTests(unittest.TestCase):
         from meld3 import doctype
         actual = self._write_xhtml(root, declaration=False,
                                  doctype=doctype.xhtml)
-        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-        <html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_fragment_kills_doctype_and_declaration(self):
@@ -765,7 +755,7 @@ class WriterTests(unittest.TestCase):
         from meld3 import doctype
         actual = self._write_xhtml(root, declaration=True,
                                  doctype=doctype.xhtml, fragment=True)
-        expected = """<html:html xmlns:html="http://www.w3.org/1999/xhtml"><html:body>Hello!</html:body></html:html>"""
+        expected = """<html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_as_html_fragment(self):

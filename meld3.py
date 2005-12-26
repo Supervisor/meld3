@@ -226,7 +226,14 @@ class _MeldElementInterface(_ElementInterface):
         pipeline    - preserve 'meld' namespace identifiers in output
                       for use in pipelining
         """
-        self.write_xml(file, encoding, doctype, fragment, declaration, pipeline)
+        if not hasattr(file, "write"):
+            file = open(file, "wb")
+        if not fragment:
+            if declaration:
+                _write_declaration(file, encoding)
+            if doctype:
+                _write_doctype(file, doctype)
+        _write_xml(file, self, encoding, {}, pipeline, xhtml=True)
             
     def clone(self, parent=None):
         """ Create a clone of an element.  If parent is not None,
@@ -270,7 +277,7 @@ class MeldParser(XMLTreeBuilder):
     """ A parser based on Fredrik's PIParser at
     http://effbot.org/zone/element-pi.htm.  It blithely ignores the
     case of a comment existing outside the root element and ignores
-    processing instructioins entirely.  We need to validate that there
+    processing instructions entirely.  We need to validate that there
     are no repeated meld id's in the source as well """
     
     def __init__(self, html=0, target=None):
@@ -469,6 +476,9 @@ def _write_xml(file, node, encoding, namespaces, pipeline, xhtml=False):
         else:
             file.write(_escape_cdata(node.text, encoding))
     else:
+        if xhtml:
+            if tag.startswith(_XHTML_PREFIX):
+                tag = tag[len(_XHTML_PREFIX):]
         items = node.items()
         xmlns_items = [] # new namespaces in this scope
         try:

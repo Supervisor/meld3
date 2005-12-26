@@ -10,6 +10,9 @@
   Override __delitem__ on meld elements in order to relieve deleted
   items of their parent pointers.
 
+  Strip all xhtml namespace identifiers out of XHTML output.  Browsers
+  just can't deal with this.
+
 0.2
 
   Use a method on elements to do writing rather than requiring a user
