@@ -2,6 +2,14 @@
 
   Fix example file.
 
+  Add ZPT-alike methods on elements: 'content', 'replace', and
+  'attributes'.  'content' replaces the node's content; 'replace'
+  replaces the node itself with a text value, and 'attributes' sets
+  the attributes of the node.
+
+  Override __delitem__ on meld elements in order to relieve deleted
+  items of their parent pointers.
+
 0.2
 
   Use a method on elements to do writing rather than requiring a user

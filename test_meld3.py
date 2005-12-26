@@ -143,6 +143,73 @@ class MeldAPITests(unittest.TestCase):
         desc = root.findmeld('description')
         self.assertEqual(desc.text, 'foo')
 
+    def test_replace_removes_all_elements(self):
+        from meld3 import Replace
+        root = self._makeElement(_SIMPLE_XML)
+        L = root.findmeld('list')
+        L.replace('this is a textual replacement')
+        R = root[0]
+        self.assertEqual(R.tag, Replace)
+        self.assertEqual(len(root.getchildren()), 1)
+
+    def test_replace_replaces_the_right_element(self):
+        from meld3 import Replace
+        root = self._makeElement(_SIMPLE_XML)
+        D = root.findmeld('description')
+        D.replace('this is a textual replacement')
+        self.assertEqual(len(root.getchildren()), 1)
+        L = root[0]
+        self.assertEqual(L.tag, 'list')
+        self.assertEqual(len(L.getchildren()), 1)
+        I = L[0]
+        self.assertEqual(I.tag, 'item')
+        self.assertEqual(len(I.getchildren()), 2)
+        N = I[0]
+        self.assertEqual(N.tag, 'name')
+        self.assertEqual(len(N.getchildren()), 0)
+        D = I[1]
+        self.assertEqual(D.tag, Replace)
+        self.assertEqual(D.text, 'this is a textual replacement')
+        self.assertEqual(len(D.getchildren()), 0)
+        self.assertEqual(D.structure, False)
+
+    def test_content(self):
+        from meld3 import Replace
+        root = self._makeElement(_SIMPLE_XML)
+        D = root.findmeld('description')
+        D.content('this is a textual replacement')
+        self.assertEqual(len(root.getchildren()), 1)
+        L = root[0]
+        self.assertEqual(L.tag, 'list')
+        self.assertEqual(len(L.getchildren()), 1)
+        I = L[0]
+        self.assertEqual(I.tag, 'item')
+        self.assertEqual(len(I.getchildren()), 2)
+        N = I[0]
+        self.assertEqual(N.tag, 'name')
+        self.assertEqual(len(N.getchildren()), 0)
+        D = I[1]
+        self.assertEqual(D.tag, 'description')
+        self.assertEqual(D.text, None)
+        self.assertEqual(len(D.getchildren()), 1)
+        T = D[0]
+        self.assertEqual(T.tag, Replace)
+        self.assertEqual(T.text, 'this is a textual replacement')
+        self.assertEqual(T.structure, False)
+
+    def test_attributes(self):
+        root = self._makeElement(_COMPLEX_XHTML)
+        D = root.findmeld('form1')
+        D.attributes(foo='bar', baz='1', g='2', action='#')
+        self.assertEqual(D.attrib, {
+            'foo':'bar', 'baz':'1', 'g':'2',
+            'method':'POST', 'action':'#',
+            '{http://www.plope.com/software/meld3}id': 'form1'})
+
+    def test_attributes_nonstringtype_raises(self):
+        root = self._makeElement('<root></root>')
+        self.assertRaises(ValueError, root.attributes, foo=1)
+
 class MeldElementInterfaceTests(unittest.TestCase):
     def _getTargetClass(self):
         from meld3 import _MeldElementInterface
@@ -754,6 +821,70 @@ class WriterTests(unittest.TestCase):
         from xml.parsers import expat
         self.assertRaises(expat.error, self._parse,
                           '<html><head></head><body>&fleeb;</body></html>')
+
+    def test_content_nostructure(self):
+        root = self._parse(_SIMPLE_XML)
+        D = root.findmeld('description')
+        D.content('description &<foo> <bar>', structure=False)
+        actual = self._write_xml(root)
+        expected = """<?xml version="1.0"?>
+        <root>
+        <list>
+        <item>
+        <name>Name</name>
+          <description>description &amp;&lt;foo&gt; &lt;bar&gt;</description>
+        </item>
+        </list>
+        </root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+        
+    def test_content_structure(self):
+        root = self._parse(_SIMPLE_XML)
+        D = root.findmeld('description')
+        D.content('description &<foo> <bar>', structure=True)
+        actual = self._write_xml(root)
+        expected = """<?xml version="1.0"?>
+        <root>
+        <list>
+        <item>
+        <name>Name</name>
+          <description>description &<foo> <bar></description>
+        </item>
+        </list>
+        </root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_replace_nostructure(self):
+        root = self._parse(_SIMPLE_XML)
+        D = root.findmeld('description')
+        D.replace('description &<foo> <bar>', structure=False)
+        actual = self._write_xml(root)
+        expected = """<?xml version="1.0"?>
+        <root>
+        <list>
+        <item>
+        <name>Name</name>
+          description &amp;&lt;foo&gt; &lt;bar&gt;
+        </item>
+        </list>
+        </root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
+        
+    def test_replace_structure(self):
+        root = self._parse(_SIMPLE_XML)
+        D = root.findmeld('description')
+        D.replace('description &<foo> <bar>', structure=True)
+        actual = self._write_xml(root)
+        expected = """<?xml version="1.0"?>
+        <root>
+        <list>
+        <item>
+        <name>Name</name>
+          description &<foo> <bar>
+        </item>
+        </list>
+        </root>"""
+        self.assertNormalizedXMLEqual(actual, expected)
 
 def normalize_html(s):
     s = re.sub(r"[ \t]+", " ", s)

@@ -233,6 +233,32 @@ Element API
     passed in iterable.  Changing 'newelement' (typically based on
     values from 'data') mutates the element "in place".
 
+    "replace(text, structure=False)": (ala ZPT's 'replace' comnand)
+    Replace this element in our parent with a 'Replace' node
+    representing the text 'text'.  Return the index of the index
+    position in our parent that was replaced.  If 'structure' is true,
+    at rendering time, the outputted text will not be escaped in the
+    serialization.  If we have no parent, do nothing, and return None.
+    This method leaves a special kind of node in the element tree (a
+    'Replace' node) to represent the replacement.  NOTE: This command
+    has the potential to cause a non-well-formed XML/HTML
+    serialization at render time if "structure" is True.
+
+    "content(text, structure=False)": (ala ZPT's 'content' command)
+    Delete every child element in this element and append a Replace
+    node that contains 'text'.  Always return None.  If 'structure' is
+    true, at rendering time, the outputted text will not be escaped in
+    the serialization.  If we have no parent, do nothing, and return
+    None.  NOTE: This command has the potential to cause a
+    non-well-formed XML/HTML serialization at render time if
+    "structure" is True.
+
+    "attributes(**kw)": (ala ZPT's 'attributes' command) For each key
+    value pair in the kw list, add an attribute to this node where the
+    attribute's name is 'key' and the attributes value is 'value'.
+    Keys and values must be string or unicode types, else a ValueError
+    is raised.  Returns None.
+
     "__mod__(other)": Fill in the text values of meld nodes in this
     element and children recursively; only support dictionarylike
     "other" operand (sequence operand doesn't seem to make sense here).

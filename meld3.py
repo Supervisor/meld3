@@ -1,5 +1,6 @@
 import htmlentitydefs
 import re
+import types
 
 from elementtree.ElementTree import _ElementInterface
 from elementtree.ElementTree import TreeBuilder
@@ -40,6 +41,11 @@ class _MeldElementInterface(_ElementInterface):
     def __setitem__(self, index, element):
         _ElementInterface.__setitem__(self, index, element)
         element.parent = self
+
+    def __delitem__(self, index):
+        element = self[index]
+        element.parent = None # remove any potential circref
+        _ElementInterface.__delitem__(self, index)
         
     def append(self, element):
         _ElementInterface.append(self, element)
@@ -54,6 +60,10 @@ class _MeldElementInterface(_ElementInterface):
         return _MeldElementInterface(tag, attrib)
 
     # meld-specific
+
+    def parse(self, src, xhtml=True):
+        """ Shortcut to parse module-scope function """
+        return parse(src, xhtml)
 
     def __mod__(self, other):
         """ Fill in the text values of meld nodes in tree; only
@@ -110,6 +120,41 @@ class _MeldElementInterface(_ElementInterface):
                 yield clone, thing
             first = False
 
+    # ZPT-alike methods
+    def replace(self, text, structure=False):
+        """ Replace this element with a Replace node in our parent with
+        the text 'text' and return the index of our position in
+        our parent.  If we have no parent, do nothing, and return None.
+        Pass the 'structure' flag to the replace node so it can do the right
+        thing at render time. """
+        parent = self.parent
+        i = self.remove()
+        if i is not None:
+            parent.insert(i, Replace(text, structure))
+            return i
+
+    def content(self, text, structure=False):
+        """ Delete this node's children and append a Replace node that
+        contains text.  Always return None.  Pass the 'structure' flag
+        to the replace node so it can do the right thing at render
+        time."""
+        for child in self._children:
+            child.parent = None # clean up potential circrefs
+        self.text = None
+        self._children = []
+        self.append(Replace(text, structure))
+
+    def attributes(self, **kw):
+        """ Set attributes on this node. """
+        for k, v in kw.items():
+            # prevent this from getting to the parser if possible
+            if not isinstance(k, types.StringTypes):
+                raise ValueError, 'do not set non-stringtype as key: %s' % k
+            if not isinstance(v, types.StringTypes):
+                raise ValueError, 'do not set non-stringtype as val: %s' % v
+            self.attrib[k] = kw[k]
+
+    # output methods
     def write_xml(self, file, encoding=None, doctype=None,
                   fragment=False, declaration=True, pipeline=False):
         """ Write XML to 'file' (which can be a filename or filelike object)
@@ -195,15 +240,28 @@ class _MeldElementInterface(_ElementInterface):
         return element
     
     def remove(self):
-        """ Remove ourselves from our parent node (de-parent). """
+        """ Remove ourselves from our parent node (de-parent) and return
+        the index of the parent which was deleted. """
+        i = self.parentindex()
+        if i is not None:
+            del self.parent[i]
+            return i
+
+    def parentindex(self):
+        """ Return the parent node index in which we live """
         parent = self.parent
         if parent is not None:
-            del self.parent
             for i in range (len(parent)):
-                if parent[i] == self:
-                    del parent[i]
-                    break
-            
+                if parent[i] is self:
+                    return i
+
+# replace element factory
+def Replace(text, structure=False):
+    element = _MeldElementInterface(Replace, {})
+    element.text = text
+    element.structure = structure
+    return element
+
 def MeldTreeBuilder():
     return TreeBuilder(element_factory=_MeldElementInterface)
 
@@ -327,6 +385,12 @@ def _write_html(file, node, encoding, namespaces):
         file.write("<!-- %s -->" % _escape_cdata(node.text, encoding))
     elif tag is ProcessingInstruction:
         file.write("<?%s?>" % _escape_cdata(node.text, encoding))
+    elif tag is Replace:
+        if node.structure:
+            # this may produce invalid html
+            file.write(_encode(node.text, encoding))
+        else:
+            file.write(_escape_cdata(node.text, encoding))
     else:
         if tag.startswith(_XHTML_PREFIX):
             tag = tag[len(_XHTML_PREFIX):]
@@ -398,6 +462,12 @@ def _write_xml(file, node, encoding, namespaces, pipeline, xhtml=False):
         file.write("<!-- %s -->" % _escape_cdata(node.text, encoding))
     elif tag is ProcessingInstruction:
         file.write("<?%s?>" % _escape_cdata(node.text, encoding))
+    elif tag is Replace:
+        if node.structure:
+            # this may produce invalid xml
+            file.write(_encode(node.text, encoding))
+        else:
+            file.write(_escape_cdata(node.text, encoding))
     else:
         items = node.items()
         xmlns_items = [] # new namespaces in this scope
