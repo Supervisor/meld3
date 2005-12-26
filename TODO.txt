@@ -33,3 +33,12 @@
 
 - Make 'repeat' retain tail cdata on repeated nodes so output looks
   nicer.
+
+- Inject xmlns:meld="http://www.plope.com/software/meld3" onto root
+  tag when before expat parsing by default (condition with a flag), as
+  NVU doesn't retain non-XHTML namespace declarations when it
+  saves. :-( The same situation likely exists for other WYSIWYG
+  editors.  Sigh.
+
+- Investigate why using the "plope.com" namespace identifier is bad.
+
