@@ -90,9 +90,8 @@ _COMPLEX_XHTML = r"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
 
 class MeldAPITests(unittest.TestCase):
     def _makeElement(self, string):
-        data = StringIO(string)
-        from meld3 import parse
-        return parse(data)
+        from meld3 import parsestring
+        return parsestring(string)
 
     def test_findmeld(self):
         root = self._makeElement(_SIMPLE_XML)
@@ -279,13 +278,13 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.failIfEqual(id(div[0][0]), id(div2[0][0]))
         self.failIfEqual(id(div[0][0][0]), id(div2[0][0][0]))
         
-    def test_remove_noparent(self):
+    def test_deparent_noparent(self):
         div = self._makeOne('div', {})
         self.assertEqual(div.parent, None)
-        div.remove()
+        div.deparent()
         self.assertEqual(div.parent, None)
         
-    def test_remove_withparent(self):
+    def test_deparent_withparent(self):
         parent = self._makeOne('parent', {})
         self.assertEqual(parent.parent, None)
         child = self._makeOne('child', {})
@@ -293,16 +292,26 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(parent.parent, None)
         self.assertEqual(child.parent, parent)
         self.assertEqual(parent[0], child)
-        child.remove()
+        child.deparent()
         self.assertEqual(child.parent, None)
         self.assertRaises(IndexError, parent.__getitem__, 0)
 
 class ParserTests(unittest.TestCase):
-    def test_parse_simple_xml(self):
+    def _parse(self, *args):
+        from meld3 import parsestring
+        root = parsestring(*args)
+        return root
+
+    def test_parse_function(self):
+        # really just test that this function continues to exist ;-)
         from meld3 import parse
-        from meld3 import _MELD_ID
-        data = StringIO(_SIMPLE_XML)
+        data = StringIO('<root>&nbsp;</root>')
         root = parse(data)
+        self.assertEqual(root.tag, 'root')
+    
+    def test_parse_simple_xml(self):
+        from meld3 import _MELD_ID
+        root = self._parse(_SIMPLE_XML)
         self.assertEqual(root.tag, 'root')
         self.assertEqual(root.parent, None)
         l1st = root[0]
@@ -324,10 +333,9 @@ class ParserTests(unittest.TestCase):
 
     def test_parse_simple_xhtml(self):
         xhtml_ns = '{http://www.w3.org/1999/xhtml}%s'
-        from meld3 import parse
         from meld3 import _MELD_ID
-        data = StringIO(_SIMPLE_XHTML)
-        root = parse(data)
+
+        root = self._parse(_SIMPLE_XHTML)
         self.assertEqual(root.tag, xhtml_ns % 'html')
         self.assertEqual(root.attrib, {})
         self.assertEqual(root.parent, None)
@@ -338,10 +346,8 @@ class ParserTests(unittest.TestCase):
 
     def test_parse_complex_xhtml(self):
         xhtml_ns = '{http://www.w3.org/1999/xhtml}%s'
-        from meld3 import parse
         from meld3 import _MELD_ID
-        data = StringIO(_COMPLEX_XHTML)
-        root = parse(data)
+        root = self._parse(_COMPLEX_XHTML)
         self.assertEqual(root.tag, xhtml_ns % 'html')
         self.assertEqual(root.attrib, {})
         self.assertEqual(root.parent, None)
@@ -416,19 +422,15 @@ class ParserTests(unittest.TestCase):
         meld_ns = "http://www.plope.com/software/meld3"
         repeated = ('<html xmlns:meld="%s" meld:id="repeat">'
                     '<body meld:id="repeat"/></html>' % meld_ns)
-        from meld3 import parse
-        data = StringIO(repeated)
-        self.assertRaises(ValueError, parse, data)
+        self.assertRaises(ValueError, self._parse, repeated)
 
     def test_nonxhtml_parsing(self):
-        from meld3 import parse
         from meld3 import _MELD_ID
-        data = StringIO(_SIMPLE_XML)
-        root = parse(data, xhtml=False)
+        root = self._parse(_SIMPLE_XML)
         self.assertEqual(root.tag, 'root')
         self.assertEqual(root.parent, None)
         from xml.parsers import expat
-        self.assertRaises(expat.error, parse, StringIO(_ENTITIES_XHTML),
+        self.assertRaises(expat.error, self._parse, _ENTITIES_XHTML,
                           False)
 
 class WriterTests(unittest.TestCase):

@@ -2,8 +2,34 @@
 
 - Provide pipelining tools.
 
-- Preserve xmlns="http://www.w3.org/1999/xhtml" on tags when it's
+- Preserve xmlns="http://www.w3.org/1999/xhtml" On tags when it's
   provided during xhtml output (or figure out why it makes the XML
   writer go berserk and output every tag with that qualified
-  namespace).
+  namespace, or just output it by default in XHTML mode only if that
+  makes sense).
 
+- Come up with something like "__mod__" which returns the ids present
+  in the keys of the operand dictionary that were actually replaced
+  (for error detection).
+
+- Come up with a structure diffing API which can tell which meld:id
+  elements are present, missing, or moved in one element tree as
+  compared to another.  The output of a script that used this might
+  be, for example, a good CVS email-at-commit hook to alert developers
+  and designers that some change demands attention on the part of the
+  developer (or that the designer removed some meld ids
+  inappropriately).
+
+- Revisit <![CDATA serialization.  Currently CDATA containers are
+  thrown away at parse time, and are thus not present in the output
+  stream.  Investigate how different browsers deal with this (esp. wrt
+  to escaped cdata in "script" and "style" elements when XHTML
+  serialization is used).
+
+- Document the proper usage of <meta content="text/html;
+  charset=ISO-8859-1" http-equiv="content-type">.  Maybe output an
+  http-equiv content type tag by default matching the serlialization
+  mode.
+
+- Make 'repeat' retain tail cdata on repeated nodes so output looks
+  nicer.

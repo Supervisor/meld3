@@ -1,6 +1,7 @@
 import htmlentitydefs
 import re
 import types
+from StringIO import StringIO
 
 from elementtree.ElementTree import _ElementInterface
 from elementtree.ElementTree import TreeBuilder
@@ -128,7 +129,7 @@ class _MeldElementInterface(_ElementInterface):
         Pass the 'structure' flag to the replace node so it can do the right
         thing at render time. """
         parent = self.parent
-        i = self.remove()
+        i = self.deparent()
         if i is not None:
             parent.insert(i, Replace(text, structure))
             return i
@@ -246,7 +247,7 @@ class _MeldElementInterface(_ElementInterface):
             child.clone(element)
         return element
     
-    def remove(self):
+    def deparent(self):
         """ Remove ourselves from our parent node (de-parent) and return
         the index of the parent which was deleted. """
         i = self.parentindex()
@@ -374,6 +375,10 @@ def parse(source, xhtml=True):
             c.parent = p
             
     return root
+
+def parsestring(text, xhtml=True):
+    io = StringIO(text)
+    return parse(io, xhtml)
 
 _HTMLTAGS_UNBALANCED    = ['area', 'base', 'basefont', 'br', 'col', 'frame',
                            'hr', 'img', 'input', 'isindex', 'link', 'meta',
@@ -547,9 +552,8 @@ def test(filename):
     for thing in range(0, 20):
         values.append((str(thing), str(thing)))
     for tr, (name, desc) in ob.repeat(values):
-        tr.findmeld('td1').text = name
-        tr.findmeld('td2').text = desc
-    from cStringIO import StringIO
+        tr.findmeld('td1').content(name)
+        tr.findmeld('td2').content(desc)
     root.write_xml(StringIO())
     
 if __name__ == '__main__':

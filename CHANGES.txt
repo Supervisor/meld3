@@ -1,17 +1,28 @@
 0.3
 
-  Fix example file.
+  Fix broken example.py file.
 
   Add ZPT-alike methods on elements: 'content', 'replace', and
   'attributes'.  'content' replaces the node's content; 'replace'
   replaces the node itself with a text value, and 'attributes' sets
-  the attributes of the node.
+  the attributes of the node.  Using the ElementTree API to do the
+  same things usually causes the code to run faster, but these
+  functions are more convenient and more easily grokked by ZPT people.
 
   Override __delitem__ on meld elements in order to relieve deleted
   items of their parent pointers.
 
   Strip all xhtml namespace identifiers out of XHTML output.  Browsers
   just can't deal with this.
+
+  Undocumented element API method 'remove' renamed to 'deparent' (it
+  was shadowing an ElementTree API method).
+
+  Documentation improvements and change examples to use ZPT-alike
+  methods.
+
+  Add 'parsestring' module-scope function which calls 'parse' with a
+  StringIO containing the passed text.
 
 0.2
 

@@ -27,9 +27,9 @@ Differences from PyMeld
     due to differences in meld tag identification (meld3's id
     attributes are in a nondefault XML namespace, PyMeld's are not).
 
-  - Input documents must be valid XML or XHTML and must include the
-    meld3 namespace declaration (conventionally on the root element).
-    For example, '<html
+  - Input documents must be valid XML or XHTML (but not HTML) and must
+    include the meld3 namespace declaration (conventionally on the
+    root element).  For example, '<html
     xmlns:meld="http://www.plope.com/software/meld3">...</html>'
 
   - The "id" attribute used to mark up is in the a separate namespace
@@ -50,26 +50,29 @@ Differences from PyMeld
     ids by passing a "pipeline" option to a "write" function
     (e.g. write_xml, wwrite_xhtml).
 
-  - Output is by default performed in "XML mode".  This is unlike
-    "HTML mode" because it doesn't "autoclose" most tags with a
-    separate ending tag nor does it strip HTML-related namespace
-    declarations.  For example, if you create an empty textarea
-    element and output it in XML mode the output will be rendered
-    <'textarea/>'.  In HTML mode, it will be rendered as
-    '<textarea></textarea>'.  You can decide how you wish to render
-    your templates by passing an 'html' flag to the meld 'writer'.
+  - Output can be performed in "XML mode", "XHTML mode" and "HTML
+    mode".  "HTML mode" doesn't "autoclose" most tags with a separate
+    ending tag nor does it strip HTML-related namespace declarations.
+    For example, if you create an empty textarea element and output it
+    in XML mode the output will be rendered <'textarea/>'.  In HTML
+    mode, it will be rendered as '<textarea></textarea>'.  You can
+    decide how you wish to render your templates by passing an 'html'
+    flag to the meld 'writer'.
 
   - meld3 elements are instances of ElementTree elements and support
-    the ElementTree element API (http://effbot.org/zone/element.htm)
-    instead of the PyMeld node API.  The ElementTree Element API has
-    been extended by meld3 to perform various functions specific to
-    meld3.
+    the "ElementTree _ElementInterface
+    API":http://effbot.org/zone/pythondoc-elementtree-ElementTree.htm#elementtree.ElementTree._ElementInterface-class)
+    instead of the PyMeld node API.  The ElementTree _ElementInterface
+    API has been extended by meld3 to perform various functions
+    specific to meld3.
 
   - meld3 elements do not support the __mod__ method with a sequence
     argument; they do support the __mod__ method with a dictionary
     argument, however.
 
-  - meld3 elements support a Meld2-style "repeat" method.
+  - meld3 elements support various ZPT-alike methods like "repeat",
+    "content", "attributes", and "replace" that are meant to work like
+    their ZPT counterparts.
 
 Examples
 
@@ -110,12 +113,12 @@ Examples
   transformations is below.  Consider the variable "xml" below bound
   to the string above::
 
-    from meld3 import parse
+    from meld3 import parsestring
     from StringIO import StringIO
-
-    root = parse(StringIO(xml))
-    root.findmeld('title').text = 'My document'
-    root.findmeld('form1').attrib['action'] = './handler'
+    
+    root = parsestring(xml)
+    root.findmeld('title').content('My document')
+    root.findmeld('form1').attributes(action='./handler')
     data = (
         {'name':'Boys',
          'description':'Ugly'},
@@ -124,8 +127,8 @@ Examples
         )
     iterator = root.findmeld('tr').repeat(data)
     for element, item in iterator:
-        element.findmeld('td1').text = item['name']
-        element.findmeld('td2').text = item['description']
+       element.findmeld('td1').content(item['name'])
+       element.findmeld('td2').content(item['description'])
 
   To output the result of the transformations to stdout as XML, we use
   the 'write' method of any element.  Below, we use the root element
@@ -134,13 +137,14 @@ Examples
     import sys
     root.write_xml(sys.stdout)
     ...
+    <?xml version="1.0"?>
     <html:html xmlns:html="http://www.w3.org/1999/xhtml">
       <html:head>
         <html:meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
         <html:title>My document</html:title>
       </html:head>
       <html:body>
-        <html:div /> <!-- empty tag -->
+        <html:div /> <!--  empty tag  -->
         <html:div>
           <html:form action="./handler" method="POST">
           <html:table border="0">
@@ -155,10 +159,10 @@ Examples
               </html:tr>
             <html:tr class="foo"><html:td>Girls</html:td><html:td>Pretty</html:td></html:tr></html:tbody>
           </html:table>
+          <html:input name="next" type="submit" value=" Next " />
           </html:form>
         </html:div>
       </html:body>
-    </html:html>
 
   We can also output text in HTML mode, This serializes the node and
   its children to HTML.  This feature was inspired by and based on
@@ -176,19 +180,20 @@ Examples
   type="checkbox" checked="checked"/>' will be turned into '<input
   type="checkbox" checked>'.  Additionally, 'script' and 'style' tags
   will not have their contents escaped (e.g. so "&" will not be turned
-  into '&amp;' when it's iside the textual content of a script or style
-  tag.)::
+  into '&amp;' when it's iside the textual content of a script or
+  style tag.)::
 
     import sys
     root.write_html(sys.stdout)
     ...
+    <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
     <html>
       <head>
-        <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"></meta>
+        <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
         <title>My document</title>
       </head>
       <body>
-        <div></div > <!-- empty tag -->
+        <div></div> <!--  empty tag  -->
         <div>
           <form action="./handler" method="POST">
           <table border="0">
@@ -203,6 +208,43 @@ Examples
               </tr>
             <tr class="foo"><td>Girls</td><td>Pretty</td></tr></tbody>
           </table>
+          <input name="next" type="submit" value=" Next ">
+          </form>
+        </div>
+      </body>
+    </html>
+
+  We can also serialize our element tree as well-formed XHTML, which
+  is largely like rendering to XML except it by default doesn't emit
+  the XML declaration and it removes all "html" namespace declarations
+  from the output.  It also emits a XHTML 'loose' doctype declaration:
+
+    import sys
+    root.write_xhtml(sys.stdout)
+    ...
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html>
+      <head>
+        <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
+        <title>My document</title>
+      </head>
+      <body>
+        <div /> <!--  empty tag  -->
+        <div>
+          <form action="./handler" method="POST">
+          <table border="0">
+            <tbody>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+              </tr>
+              <tr class="foo">
+                <td>Boys</td>
+                <td>Ugly</td>
+              </tr>
+            <tr class="foo"><td>Girls</td><td>Pretty</td></tr></tbody>
+          </table>
+          <input name="next" type="submit" value=" Next " />
           </form>
         </div>
       </body>
@@ -210,8 +252,9 @@ Examples
 
 Element API
 
-  meld3 elements support all of the ElementTree API.  Other
-  meld-specific methods of elements are as follows::
+  meld3 elements support all of the "ElementTree _ElementInterface
+  API":http://effbot.org/zone/pythondoc-elementtree-ElementTree.htm#elementtree.ElementTree._ElementInterface-class
+  .  Other meld-specific methods of elements are as follows::
 
     "clone(parent=None)": clones a node and all of its children via a
     recursive copy.  If parent is passed in, append the clone to the
@@ -297,6 +340,41 @@ Element API
     pipeline    -- preserve 'meld' namespace identifiers in output
                    for use in pipelining
 
+    Note that despite the fact that you can tell meld which doctype to
+    serve, meld does no semantic or syntactical validation of
+    attributes or elements when serving content in XHTML mode; you as
+    a programmer are still responsible for ensuring that your
+    rendering does not include font tags, for instance.
+
+    Rationale for defaults: By default, 'write_xhtml' doesn't emit an
+    XML declaration because versions of IE before 7 apparently go into
+    "quirks" layout mode when they see an XML declaration, instead of
+    sniffing the DOCTYPE like they do when the xml declaration is not
+    present to determine the layout mode.  (see
+    http://hsivonen.iki.fi/doctype/ and
+    http://blogs.msdn.com/ie/archive/2005/09/15/467901.aspx).
+    'write_xhtml' emits a 'loose' XHTML doctype by default instead of
+    a 'strict' XHTML doctype because 'tidy' emits a 'loose' doctye by
+    default when you convert an HTML document into XHTML via
+    '-asxhtml', and I couldn't think of a good reason to contradict
+    that precedent.
+
+    A note about emitting the proper Content-Type header when serving
+    pages rendered with write_xhtml: you can sometimes use the
+    content-type 'application/xhtml+xml' (see
+    "http://www.w3.org/TR/xhtml-media-types/#application-xhtml-xml").
+    The official specification calls for this.  But not all browsers
+    support this content type (notably, no version of IE supports it,
+    nor apparently does Safari).  So these pages *may* be served using
+    the 'text/html' content type and most browsers will attempt to do
+    doctype sniffing to figure out if the document is actually XHTML.
+    It appears that you can use the Accepts header in the request to
+    figure out if the user agent accepts 'application/xhtml+xml' if
+    you're a stickler for correctness.  In practice, this seems like
+    the right thing to do.  See
+    "http://keystonewebsites.com/articles/mime_type.php" for more
+    information on serving up the correct content type header.
+
     "write_html(self, file, encoding=None, doctype=doctype.html,fragment=False)":
     Write HTML to 'file' (which can be a filename or filelike object)
     encoding    -- encoding string (if None, 'utf-8' encoding is assumed).
@@ -315,16 +393,21 @@ Element API
 
     In general: For all output methods, comments are preserved in
     output.  They are also present in the ElementTree node tree (as
-    Comment elements), so beware. Processing instructions (e.g. <?xml
-    version="1.0">) are completely thrown away at parse time and do
+    Comment elements), so beware. Processing instructions (e.g. '<?xml
+    version="1.0">') are completely thrown away at parse time and do
     not exist anywhere in the element tree or in the output (use the
     declaration= parameter to emit a declaration processing
     instruction).
 
 Parsing API
 
-  All source documents are turned into element trees using the "parse"
-  function (demonstrated in examples above).
+  All source text is turned into element trees using the "parsestring"
+  function (demonstrated in examples above).  A function that accepts
+  a filename or a filelike object instead of a string, but which
+  performs the same function is named "parse", e.g.::
+
+    from meld3 import parse
+    from meld3 import parsestring
 
   HTML entities can now be parsed properly (magically) when a DOCTYPE
   is not supplied in the source of the XML passed to 'parse'.  If your
@@ -333,10 +416,11 @@ Parsing API
   contain a DOCTYPE declaration, the existing DOCTYPE is used (and
   HTML entities thus may or may not work as a result, depending on the
   DOCTYPE).  To prevent this behavior, pass a false value to the
-  xhtml= parameter of the 'parse' function.  This in no way effects
-  output, which is independent of parsing.  This does not imply that
-  any *non*-HTML entity can be parsed in the input stream under any
-  circumstance without having it defined it in your source document.
+  xhtml= parameter of the 'parse' or 'parsestring' functions.  This in
+  no way effects output, which is independent of parsing.  This does
+  not imply that any *non*-HTML entity can be parsed in the input
+  stream under any circumstance without having it defined it in your
+  source document.
 
   Using duplicate meld identifiers on separate elements in the source
   document causes a ValueError to be raised at parse time.
