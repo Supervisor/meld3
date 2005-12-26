@@ -2,4 +2,8 @@
 
 - Provide pipelining tools.
 
+- Preserve xmlns="http://www.w3.org/1999/xhtml" on tags when it's
+  provided during xhtml output (or figure out why it makes the XML
+  writer go berserk and output every tag with that qualified
+  namespace).
 
