@@ -3,10 +3,10 @@
 - Provide pipelining tools.
 
 - Preserve xmlns="http://www.w3.org/1999/xhtml" On tags when it's
-  provided during xhtml output (or figure out why it makes the XML
-  writer go berserk and output every tag with that qualified
-  namespace, or just output it by default in XHTML mode only if that
-  makes sense).
+  provided in the parsed XML input during xhtml output (or figure out
+  why it makes the XML writer go berserk and output every tag with
+  that qualified namespace, or just output it by default in XHTML mode
+  only if that makes sense).
 
 - Come up with something like "__mod__" which returns the ids present
   in the keys of the operand dictionary that were actually replaced
@@ -33,12 +33,6 @@
 
 - Make 'repeat' retain tail cdata on repeated nodes so output looks
   nicer.
-
-- Inject xmlns:meld="http://www.plope.com/software/meld3" onto root
-  tag when before expat parsing by default (condition with a flag), as
-  NVU doesn't retain non-XHTML namespace declarations when it
-  saves. :-( The same situation likely exists for other WYSIWYG
-  editors.  Sigh.
 
 - Investigate why using the "plope.com" namespace identifier is bad.
 

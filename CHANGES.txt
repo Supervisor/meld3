@@ -21,8 +21,18 @@
   Documentation improvements and change examples to use ZPT-alike
   methods.
 
-  Add 'parsestring' module-scope function which calls 'parse' with a
-  StringIO containing the passed text.
+  Add support for HTML input files.  Input files don't need to be
+  strictly well-formed XML anymore.
+
+  Remove the 'parse' top-level function in favor of explicit separate
+  xml parsing and html parsing functions.
+
+  Add 'parse_xml' and 'parse_html' top-level parsing functions.
+
+  Add 'parse_xmlstring' and 'parse_htmlstring' module-scope functions
+  which calls their respective 'parse_xxx' function with a StringIO
+  containing the passed text.
+
 
 0.2
 

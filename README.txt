@@ -2,13 +2,13 @@ meld3
 
 Overview
 
-  meld3 is an XML templating system for Python 2.3+ which keeps
+  meld3 is an HTML/XML templating system for Python 2.3+ which keeps
   template markup and dynamic rendering logic separate from one
   another.  See http://www.entrian.com/PyMeld for a treatise on the
   benefits of this pattern.
 
-  meld3 requires well-formed XML/XHTML input and can output
-  well-formed XML/XHTML or HTML.
+  meld3 can deal with HTML or XML/XHTML input and can output
+  well-formed HTML or XML/XHTML.
 
   meld3 is a variation of Paul Winkler's Meld2, which is itself a
   variation of Richie Hindle's PyMeld.
@@ -26,11 +26,6 @@ Differences from PyMeld
   - Templates created for use under PyMeld will not work under meld3
     due to differences in meld tag identification (meld3's id
     attributes are in a nondefault XML namespace, PyMeld's are not).
-
-  - Input documents must be valid XML or XHTML (but not HTML) and must
-    include the meld3 namespace declaration (conventionally on the
-    root element).  For example, '<html
-    xmlns:meld="http://www.plope.com/software/meld3">...</html>'
 
   - The "id" attribute used to mark up is in the a separate namespace
     (aka. xmlns="http://www.plope.com/software/meld3").  So instead of
@@ -109,14 +104,20 @@ Examples
       </body>
     </html>
 
+  Note that the script contains no logic, only "meld:id" identifiers.
+  All "meld:id" identifiers in a single document must be unique for a
+  meld template to be parseable.
+
   A script which parses the above template and does some
   transformations is below.  Consider the variable "xml" below bound
-  to the string above::
+  to a string representing the XHTML above::
 
-    from meld3 import parsestring
+    from meld3 import parse_xmlstring
+    from meld3 import parse_htmlstring
     from StringIO import StringIO
-    
-    root = parsestring(xml)
+    import sys
+
+    root = parse_xmlstring(xml)
     root.findmeld('title').content('My document')
     root.findmeld('form1').attributes(action='./handler')
     data = (
@@ -127,8 +128,13 @@ Examples
         )
     iterator = root.findmeld('tr').repeat(data)
     for element, item in iterator:
-       element.findmeld('td1').content(item['name'])
-       element.findmeld('td2').content(item['description'])
+        element.findmeld('td1').content(item['name'])
+        element.findmeld('td2').content(item['description'])
+
+  You used the "parse_xmlstring" function to transform the XML into a
+  tree of nodes above.  This was possible because the input was
+  well-formed XML.  If it had not been, you would have needed to use
+  the "parse_htmlstring" function instead.
 
   To output the result of the transformations to stdout as XML, we use
   the 'write' method of any element.  Below, we use the root element
@@ -164,10 +170,47 @@ Examples
         </html:div>
       </html:body>
 
+  We can also serialize our element tree as well-formed XHTML, which
+  is largely like rendering to XML except it by default doesn't emit
+  the XML declaration and it removes all "html" namespace declarations
+  from the output.  It also emits a XHTML 'loose' doctype declaration
+  near the top of the document:
+
+    import sys
+    root.write_xhtml(sys.stdout)
+    ...
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html>
+      <head>
+        <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
+        <title>My document</title>
+      </head>
+      <body>
+        <div /> <!--  empty tag  -->
+        <div>
+          <form action="./handler" method="POST">
+          <table border="0">
+            <tbody>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+              </tr>
+              <tr class="foo">
+                <td>Boys</td>
+                <td>Ugly</td>
+              </tr>
+            <tr class="foo"><td>Girls</td><td>Pretty</td></tr></tbody>
+          </table>
+          <input name="next" type="submit" value=" Next " />
+          </form>
+        </div>
+      </body>
+    </html>
+
   We can also output text in HTML mode, This serializes the node and
-  its children to HTML.  This feature was inspired by and based on
-  code Ian Bicking.  By default, the serialization will include a
-  'loose' HTML DTD doctype (this can be overridden with the doctype=
+  its children to HTML (this feature was inspired by and based on code
+  Ian Bicking).  By default, the serialization will include a 'loose'
+  HTML DTD doctype (this can be overridden with the doctype=
   argument).  "Empty" shortcut elements such as '<div/>' will be
   converted to a balanced pair of tags e.g. '<div></div>'.  But some
   HTML tags (defined as per the HTML 4 spec as area, base, basefont,
@@ -209,42 +252,6 @@ Examples
             <tr class="foo"><td>Girls</td><td>Pretty</td></tr></tbody>
           </table>
           <input name="next" type="submit" value=" Next ">
-          </form>
-        </div>
-      </body>
-    </html>
-
-  We can also serialize our element tree as well-formed XHTML, which
-  is largely like rendering to XML except it by default doesn't emit
-  the XML declaration and it removes all "html" namespace declarations
-  from the output.  It also emits a XHTML 'loose' doctype declaration:
-
-    import sys
-    root.write_xhtml(sys.stdout)
-    ...
-    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-    <html>
-      <head>
-        <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
-        <title>My document</title>
-      </head>
-      <body>
-        <div /> <!--  empty tag  -->
-        <div>
-          <form action="./handler" method="POST">
-          <table border="0">
-            <tbody>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-              </tr>
-              <tr class="foo">
-                <td>Boys</td>
-                <td>Ugly</td>
-              </tr>
-            <tr class="foo"><td>Girls</td><td>Pretty</td></tr></tbody>
-          </table>
-          <input name="next" type="submit" value=" Next " />
           </form>
         </div>
       </body>
@@ -401,41 +408,45 @@ Element API
 
 Parsing API
 
-  All source text is turned into element trees using the "parsestring"
-  function (demonstrated in examples above).  A function that accepts
-  a filename or a filelike object instead of a string, but which
-  performs the same function is named "parse", e.g.::
+  XML source text is turned into element trees using the
+  "parse_xmlstring" function (demonstrated in examples above).  A
+  function that accepts a filename or a filelike object instead of a
+  string, but which performs the same function is named "parse_xml",
+  e.g.::
 
-    from meld3 import parse
-    from meld3 import parsestring
+    from meld3 import parse_xml
+    from meld3 import parse_xmlstring
 
-  HTML entities can now be parsed properly (magically) when a DOCTYPE
-  is not supplied in the source of the XML passed to 'parse'.  If your
-  source document does not contain a DOCTYPE declaration, the DOCTYPE
-  is set to 'loose' XHTML 'by magic'.  If your source document does
-  contain a DOCTYPE declaration, the existing DOCTYPE is used (and
-  HTML entities thus may or may not work as a result, depending on the
-  DOCTYPE).  To prevent this behavior, pass a false value to the
-  xhtml= parameter of the 'parse' or 'parsestring' functions.  This in
-  no way effects output, which is independent of parsing.  This does
-  not imply that any *non*-HTML entity can be parsed in the input
-  stream under any circumstance without having it defined it in your
-  source document.
+  HTML source text is turned into element trees using the
+  "parse_htmlstring" function.  A function that accepts a filename or
+  a filelike object instead of a string, but which performs the same
+  function is named "parse_html", e.g.::
+
+    from meld3 import parse_html
+    from meld3 import parse_htmlstring
 
   Using duplicate meld identifiers on separate elements in the source
   document causes a ValueError to be raised at parse time.
 
+  When using parse_xml and parse_xmlstring, documents which contain
+  entity references (e.g. '&nbsp;') must have the entities defined in
+  the source document or must have a DOCTYPE declaration that allows
+  those entities to be resolved by the expat parser.
+
+  When using parse_xml and parse_xmlstring, input documents must
+  include the meld3 namespace declaration (conventionally on the root
+  element).  For example, '<html
+  xmlns:meld="http://www.plope.com/software/meld3">...</html>'
+
 To Do
 
-  The API is by no means fixed in stone.  It is apt to change at any
-  time.
+  The API is not yet finalized.
 
   This implementation depends on classes internal to ElementTree and
   hasn't been tested with cElementTree or lxml, and almost certainly
   won't work with either due to this.
 
-  Obviously getting rid of extraneous output in the form of namespaced
-  elements would be nice.
+  See TODO.txt for more to-do items.
 
 Reporting Bugs and Requesting Features
 

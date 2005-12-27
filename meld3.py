@@ -1,6 +1,7 @@
 import htmlentitydefs
 import re
 import types
+import mimetools
 from StringIO import StringIO
 
 from elementtree.ElementTree import _ElementInterface
@@ -16,11 +17,18 @@ from elementtree.ElementTree import _encode
 from elementtree.ElementTree import _namespace_map
 from elementtree.ElementTree import fixtag
 from elementtree.ElementTree import parse as et_parse
+from elementtree.HTMLTreeBuilder import HTMLParser
+from elementtree.HTMLTreeBuilder import IGNOREEND
+from elementtree.HTMLTreeBuilder import AUTOCLOSE
+from elementtree.HTMLTreeBuilder import is_not_ascii
 
-_MELD_PREFIX = '{http://www.plope.com/software/meld3}'
-_MELD_LOCAL = 'id'
-_MELD_ID = '%s%s' % (_MELD_PREFIX, _MELD_LOCAL)
-_XHTML_PREFIX = '{http://www.w3.org/1999/xhtml}'
+
+_MELD_NS_URL  = 'http://www.plope.com/software/meld3'
+_MELD_PREFIX  = '{%s}' % _MELD_NS_URL
+_MELD_LOCAL   = 'id'
+_MELD_ID      = '%s%s' % (_MELD_PREFIX, _MELD_LOCAL)
+_XHTML_NS_URL = 'http://www.w3.org/1999/xhtml'
+_XHTML_PREFIX = '{%s}' % _XHTML_NS_URL
 
 _marker = []
 
@@ -319,66 +327,136 @@ class MeldParser(XMLTreeBuilder):
         self.meldids = {}
         return val
 
-class XHTMLMeldParser(MeldParser):
+class HTMLMeldParser(HTMLParser):
+    """ A mostly-cut-and-paste of ElementTree's HTMLTreeBuilder that
+    does special meld3 things (like preserve comments and munge meld
+    ids).  Subclassing is not possible due to private attributes. :-("""
 
-    """ A tree builder that understands XHTML entities by default by
-    including am XHTML 'loose' doctype in the stream used by the
-    parser if the document doesn't declare a specific doctype.  Expat
-    requires such a declaration if it is to resolve any entities, but
-    it's convenient to not need to declare a doctype in source documents."""
+    def __init__(self, builder=None, encoding=None):
+        self.__stack = []
+        if builder is None:
+            builder = MeldTreeBuilder()
+        self.builder = builder
+        self.encoding = encoding or "iso-8859-1"
+        HTMLParser.__init__(self)
+        self.meldids = {}
 
-    xhtml_doctype = '<!DOCTYPE %s PUBLIC "%s" "%s">\n' % doctype.xhtml
-    xml_decl_re = re.compile(r'<\?xml .*?\?>')
+    def close(self):
+        HTMLParser.close(self)
+        self.meldids = {}
+        return self.builder.close()
 
-    def __init__(self, html=0, target=None):
-        MeldParser.__init__(self, html, target)
-        self.entity = htmlentitydefs.entitydefs.copy()
-        self.beginning = True
+    def handle_starttag(self, tag, attrs):
+        if tag == "meta":
+            # look for encoding directives
+            http_equiv = content = None
+            for k, v in attrs:
+                if k == "http-equiv":
+                    http_equiv = v.lower()
+                elif k == "content":
+                    content = v
+            if http_equiv == "content-type" and content:
+                # use mimetools to parse the http header
+                header = mimetools.Message(
+                    StringIO("%s: %s\n\n" % (http_equiv, content))
+                    )
+                encoding = header.getparam("charset")
+                if encoding:
+                    self.encoding = encoding
+        if tag in AUTOCLOSE:
+            if self.__stack and self.__stack[-1] == tag:
+                self.handle_endtag(tag)
+        self.__stack.append(tag)
+        attrib = {}
+        if attrs:
+            for k, v in attrs:
+                if k == 'meld:id':
+                    k = _MELD_ID
+                    if self.meldids.get(v):
+                        raise ValueError, ('Repeated meld id "%s" in source' %
+                                           v)
+                    self.meldids[v] = 1
+                attrib[k.lower()] = v
+        self.builder.start(tag, attrib)
+        if tag in IGNOREEND:
+            self.__stack.pop()
+            self.builder.end(tag)
 
-    def feed(self, data):
-        if self.beginning:
-            # assume that the doctype declaration will be in the first
-            # data payload (not strictly true, and it's perhaps a bit
-            # lame, but it's easier and clearer than maintaining a
-            # buffer of the stream in the unlikely circumstance that
-            # the doctype can't be found in this payload)
-            index = data.find('<!DOCTYPE')
-            if index == -1:
-                # jam an xhtml doctype declaration into the stream if the
-                # document doesn't already have a doctype declaration
-                match = self.xml_decl_re.search(data)
-                if match is not None:
-                    start, end = match.span(0)
-                    before = data[:start]
-                    after = data[end:]
-                    data = before + self.xhtml_doctype + after
-                else:
-                    data = self.xhtml_doctype + data
-            self.beginning = False
-        return XMLTreeBuilder.feed(self, data)
+    def handle_endtag(self, tag):
+        if tag in IGNOREEND:
+            return
+        lasttag = self.__stack.pop()
+        if tag != lasttag and lasttag in AUTOCLOSE:
+            self.handle_endtag(lasttag)
+        self.builder.end(tag)
 
-def parse(source, xhtml=True):
-    """ Parse source (a filelike object) into an element tree.  If
-    xhtml is true, use a special parser that knows about html
-    entities.  Otherwise use a 'normal' parser only. """
-    builder = MeldTreeBuilder()
-    if xhtml:
-        # XHTMLTreeBuilder knows about html entities by default
-        parser = XHTMLMeldParser(target=builder)
-    else:
-        parser = MeldParser(target=builder)
+    def handle_charref(self, char):
+        if char[:1] == "x":
+            char = int(char[1:], 16)
+        else:
+            char = int(char)
+        if 0 <= char < 128:
+            self.builder.data(chr(char))
+        else:
+            self.builder.data(unichr(char))
+
+    def handle_entityref(self, name):
+        entity = htmlentitydefs.entitydefs.get(name)
+        if entity:
+            if len(entity) == 1:
+                entity = ord(entity)
+            else:
+                entity = int(entity[2:-1])
+            if 0 <= entity < 128:
+                self.builder.data(chr(entity))
+            else:
+                self.builder.data(unichr(entity))
+        else:
+            self.unknown_entityref(name)
+
+    def handle_data(self, data):
+        if isinstance(data, type('')) and is_not_ascii(data):
+            # convert to unicode, but only if necessary
+            data = unicode(data, self.encoding, "ignore")
+        self.builder.data(data)
+
+    def unknown_entityref(self, name):
+        pass # ignore by default; override if necessary
+
+    def handle_comment(self, data):
+        self.builder.start(Comment, {})
+        self.builder.data(data)
+        self.builder.end(Comment)
+
+
+def do_parse(source, parser):
     root = et_parse(source, parser=parser).getroot()
-
     iterator = root.getiterator()
     for p in iterator:
         for c in p:
             c.parent = p
-            
     return root
+    
+def parse_xml(source):
+    """ Parse source (a filelike object) into an element tree.  If
+    html is true, use a parser that can resolve somewhat ambiguous
+    HTML into XHTML.  Otherwise use a 'normal' parser only."""
+    builder = MeldTreeBuilder()
+    parser = MeldParser(target=builder)
+    return do_parse(source, parser)
 
-def parsestring(text, xhtml=True):
-    io = StringIO(text)
-    return parse(io, xhtml)
+def parse_html(source, encoding=None):
+    builder = MeldTreeBuilder()
+    parser = HTMLMeldParser(builder, encoding)
+    return do_parse(source, parser)
+
+def parse_xmlstring(text):
+    source = StringIO(text)
+    return parse_xml(source)
+
+def parse_htmlstring(text, encoding=None):
+    source = StringIO(text)
+    return parse_html(source, encoding)
 
 _HTMLTAGS_UNBALANCED    = ['area', 'base', 'basefont', 'br', 'col', 'frame',
                            'hr', 'img', 'input', 'isindex', 'link', 'meta',
@@ -504,6 +582,10 @@ def _write_xml(file, node, encoding, namespaces, pipeline, xhtml=False):
                                 continue
                         k, xmlns = fixtag(k, namespaces)
                         if xmlns: xmlns_items.append(xmlns)
+                    if not pipeline:
+                        # special-case for HTML input
+                        if k == 'xmlns:meld':
+                            continue
                 except TypeError:
                     _raise_serialization_error(k)
                 try:
@@ -531,6 +613,9 @@ def _write_xml(file, node, encoding, namespaces, pipeline, xhtml=False):
     if node.tail:
         file.write(_escape_cdata(node.tail, encoding))
 
+
+# utility functions
+
 def _write_declaration(file, encoding):
     if not encoding:
         file.write('<?xml version="1.0"?>\n')
@@ -545,8 +630,43 @@ def _write_doctype(file, doctype):
                            "(name, pubid, system) e.g. '%s'" % doctype.xhtml)
     file.write('<!DOCTYPE %s PUBLIC "%s" "%s">\n' % (name, pubid, system))
 
+xml_decl_re = re.compile(r'<\?xml .*?\?>')
+begin_tag_re = re.compile(r'<[^/?!]?\w+')
+'<!DOCTYPE %s PUBLIC "%s" "%s">' % doctype.html
+
+def insert_doctype(data, doctype=doctype.xhtml):
+    # jam an html doctype declaration into 'data' if it
+    # doesn't already contain a doctype declaration
+    match = xml_decl_re.search(data)
+    dt_string = '<!DOCTYPE %s PUBLIC "%s" "%s">' % doctype
+    if match is not None:
+        start, end = match.span(0)
+        before = data[:start]
+        tag = data[start:end]
+        after = data[end:]
+        return before + tag + dt_string + after
+    else:
+        return dt_string + data
+
+def insert_meld_ns_decl(data):
+    match = begin_tag_re.search(data)
+    if match is not None:
+        start, end = match.span(0)
+        before = data[:start]
+        tag = data[start:end] + ' xmlns:meld="%s"' % _MELD_NS_URL
+        after = data[end:]
+        data =  before + tag + after
+    return data
+
+def prefeed(data, doctype=doctype.xhtml):
+    if data.find('<!DOCTYPE') == -1:
+        data = insert_doctype(data, doctype)
+    if data.find('xmlns:meld') == -1:
+        data = insert_meld_ns_decl(data)
+    return data
+
 def test(filename):
-    root = parse(open(filename, 'r'))
+    root = parse_xml(open(filename, 'r'))
     ob = root.findmeld('tr')
     values = []
     for thing in range(0, 20):

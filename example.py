@@ -28,11 +28,12 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
   </body>
 </html>
 """
-from meld3 import parsestring
+from meld3 import parse_xmlstring
+from meld3 import parse_htmlstring
 from StringIO import StringIO
 import sys
 
-root = parsestring(xml)
+root = parse_xmlstring(xml)
 root.findmeld('title').content('My document')
 root.findmeld('form1').attributes(action='./handler')
 data = (
