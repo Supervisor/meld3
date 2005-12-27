@@ -181,6 +181,13 @@ class MeldAPITests(unittest.TestCase):
         desc = root.findmeld('description')
         self.assertEqual(desc.text, 'foo')
 
+    def test_fillmelds(self):
+        root = self._makeElement(_SIMPLE_XML)
+        unfilled = root.fillmelds(**{'description':'foo', 'jammyjam':'a'})
+        desc = root.findmeld('description')
+        self.assertEqual(desc.text, 'foo')
+        self.assertEqual(unfilled, ['jammyjam'])
+
     def test_replace_removes_all_elements(self):
         from meld3 import Replace
         root = self._makeElement(_SIMPLE_XML)

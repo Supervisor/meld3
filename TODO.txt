@@ -8,10 +8,6 @@
   that qualified namespace, or just output it by default in XHTML mode
   only if that makes sense).
 
-- Come up with something like "__mod__" which returns the ids present
-  in the keys of the operand dictionary that were actually replaced
-  (for error detection).
-
 - Come up with better diff reduction.
 
 - Revisit <![CDATA serialization.  Currently CDATA containers are

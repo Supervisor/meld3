@@ -22,7 +22,6 @@ from elementtree.HTMLTreeBuilder import IGNOREEND
 from elementtree.HTMLTreeBuilder import AUTOCLOSE
 from elementtree.HTMLTreeBuilder import is_not_ascii
 
-
 _MELD_NS_URL  = 'http://www.plope.com/software/meld3'
 _MELD_PREFIX  = '{%s}' % _MELD_NS_URL
 _MELD_LOCAL   = 'id'
@@ -78,10 +77,23 @@ class _MeldElementInterface(_ElementInterface):
         """ Fill in the text values of meld nodes in tree; only
         support dictionarylike operand (sequence operand doesn't seem
         to make sense here)"""
-        for k in other:
+        return self.fillmelds(**other)
+
+    def fillmelds(self, **kw):
+        """ Fill in the text values of meld nodes in tree using the
+        keyword arguments passed in; use the keyword keys as meld ids
+        and the keyword values as text that should fill in the node
+        text on which that meld id is found.  Return a list of keys
+        from **kw that were not able to be found anywhere in the tree.
+        Never raises an exception. """
+        unfilled = []
+        for k in kw:
             node = self.findmeld(k)
-            if node is not None:
-                node.text = other[k]
+            if node is None:
+                unfilled.append(k)
+            else:
+                node.text = kw[k]
+        return unfilled
 
     def findmeld(self, name, default=_marker):
         """ Find a node in the tree that has a 'meld id' corresponding

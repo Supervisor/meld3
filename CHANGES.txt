@@ -3,8 +3,12 @@
   Add diffing capability to meld nodes.  The file 'melddiff.py' shows an
   example of using the diff API.
 
-  Add a meldid() method to elements.  This returns None if the element
+  Add a 'meldid()' method to elements.  This returns None if the element
   has no meld id, otherwise it returns the id.
+
+  Add a 'fillmeld(**kw)' method to elements.  This does the same thing
+  as '__mod__' but returns meld ids (the keys of **kw) that cannot be
+  found anywhere in the tree.
 
 0.3
 

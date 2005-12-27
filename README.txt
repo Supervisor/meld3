@@ -315,6 +315,11 @@ Element API
     "__mod__(other)": Fill in the text values of meld nodes in this
     element and children recursively; only support dictionarylike
     "other" operand (sequence operand doesn't seem to make sense here).
+    
+    "fillmelds(**kw)":Fill in the text values of meld nodes in this
+    element and children recursively.  Return the names of keys in the
+    **kw dictionary that could not be found anywhere in the tree.  Never
+    raise an exception.
 
     "write_xml(file, encoding=None, doctype=None, fragment=False, 
     declaration=True, pipeline=False)":
