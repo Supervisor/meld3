@@ -12,13 +12,7 @@
   in the keys of the operand dictionary that were actually replaced
   (for error detection).
 
-- Come up with a structure diffing API which can tell which meld:id
-  elements are present, missing, or moved in one element tree as
-  compared to another.  The output of a script that used this might
-  be, for example, a good CVS email-at-commit hook to alert developers
-  and designers that some change demands attention on the part of the
-  developer (or that the designer removed some meld ids
-  inappropriately).
+- Come up with better diff reduction.
 
 - Revisit <![CDATA serialization.  Currently CDATA containers are
   thrown away at parse time, and are thus not present in the output

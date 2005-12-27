@@ -335,6 +335,53 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(child.parent, None)
         self.assertRaises(IndexError, parent.__getitem__, 0)
 
+    def test_shortrepr(self):
+        div = self._makeOne('div', {'id':'div1'})
+        span = self._makeOne('span', {})
+        span2 = self._makeOne('span', {'id':'2'})
+        span3 = self._makeOne('span3', {'id':'3'})
+        span4 = self._makeOne('span4', {'id':'4'})
+        span5 = self._makeOne('span5', {'id':'5'})
+        span6 = self._makeOne('span6', {'id':'6'})
+        div2 = self._makeOne('div2', {'id':'div2'})
+        div.append(span)
+        span.append(span2)
+        span2.append(span3)
+        span3.append(span4)
+        span4.append(span5)
+        div.append(div2)
+        r = div.shortrepr()
+        self.assertEqual(r, '<div id="div1"><span><span id="2"> [...]\n</span></span><div2 id="div2"></div2></div>')
+
+    def test_shortrepr2(self):
+        from meld3 import parse_xmlstring
+        root = parse_xmlstring(_COMPLEX_XHTML)
+        r = root.shortrepr()
+        self.assertEqual(r, '<html>\n  <head>\n    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">\n     [...]\n</head>\n  <!--  a comment  -->\n   [...]\n</html>')
+
+    def test_diffmeld(self):
+        from meld3 import parse_xmlstring
+        from meld3 import _MELD_ID
+        root = parse_xmlstring(_COMPLEX_XHTML)
+        clone = root.clone()
+        div = self._makeOne('div', {_MELD_ID:'newdiv'})
+        clone.append(div)
+        tr = clone.findmeld('tr')
+        tr.deparent()
+        title = clone.findmeld('title')
+        title.deparent()
+        clone.append(title)
+        changes = root.diffmeld(clone)
+        addedtags = [ x.attrib[_MELD_ID] for x in changes['added'] ]
+        removedtags = [x.attrib[_MELD_ID] for x in changes['removed'] ]
+        movedtags = [ x.attrib[_MELD_ID] for x in changes['moved'] ]
+        addedtags.sort()
+        removedtags.sort()
+        movedtags.sort()
+        self.assertEqual(addedtags,['newdiv'])
+        self.assertEqual(removedtags,['td1', 'td2', 'tr'])
+        self.assertEqual(movedtags, ['title'])
+
 class ParserTests(unittest.TestCase):
     def _parse(self, *args):
         from meld3 import parse_xmlstring

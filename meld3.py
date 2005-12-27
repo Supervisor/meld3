@@ -98,6 +98,65 @@ class _MeldElementInterface(_ElementInterface):
             return None
         return default
 
+    def diffmeld(self, other):
+        """ Compute the meld element differences from this node (the
+        source) to 'other' (the target).  Return a dictionary of
+        sequences in the form {'added':[], 'removed':[], 'moved':[]}"""
+        def sharedparents(srcelement, tgtelement):
+            srcparent = srcelement.parent
+            tgtparent = tgtelement.parent
+            srcparenttag = getattr(srcparent, 'tag', None)
+            tgtparenttag = getattr(tgtparent, 'tag', None)
+            if srcparenttag != tgtparenttag:
+                return False
+            elif tgtparenttag is None and srcparenttag is None:
+                return True
+            elif tgtparent and srcparent:
+                return sharedparents(srcparent, tgtparent)
+            return False
+
+        srcelements = self.findmelds()
+        srcids = {}
+        for element in srcelements:
+            srcids[element.attrib[_MELD_ID]] = element
+
+        tgtelements = other.findmelds()
+        tgtids = {}
+        for element in tgtelements:
+            tgtids[element.attrib[_MELD_ID]] = element
+        
+        removed = []
+        for srcid in srcids:
+            if srcid not in tgtids:
+                removed.append(srcids[srcid])
+
+        added = []
+        for tgtid in tgtids:
+            if tgtid not in srcids:
+                added.append(tgtids[tgtid])
+                
+        moved = []
+        for srcid in srcids:
+            if srcid in tgtids:
+                srcelement = srcids[srcid]
+                tgtelement = tgtids[srcid]
+                if not sharedparents(srcelement, tgtelement):
+                    moved.append(tgtelement)
+
+        moved = diffreduce(moved)
+
+        return {'added':added, 'removed':removed, 'moved':moved}
+            
+    def findmelds(self):
+        iterator = self.getiterator()
+        elements = []
+        for element in iterator:
+            val = element.attrib.get(_MELD_ID)
+            if val is not None:
+                elements.append(element)
+        return elements
+        
+    # ZPT-alike methods
     def repeat(self, iterable, childname=None):
         """repeats an element with values from an iterable.  If
         'childname' is not None, repeat the element on which the
@@ -129,7 +188,6 @@ class _MeldElementInterface(_ElementInterface):
                 yield clone, thing
             first = False
 
-    # ZPT-alike methods
     def replace(self, text, structure=False):
         """ Replace this element with a Replace node in our parent with
         the text 'text' and return the index of our position in
@@ -254,7 +312,7 @@ class _MeldElementInterface(_ElementInterface):
         for child in self.getchildren():
             child.clone(element)
         return element
-    
+
     def deparent(self):
         """ Remove ourselves from our parent node (de-parent) and return
         the index of the parent which was deleted. """
@@ -270,6 +328,15 @@ class _MeldElementInterface(_ElementInterface):
             for i in range (len(parent)):
                 if parent[i] is self:
                     return i
+
+    def shortrepr(self, encoding=None):
+        file = StringIO()
+        _write_html(file, self, encoding, {}, maxdepth=2)
+        file.seek(0)
+        return file.read()
+
+    def meldid(self):
+        return self.attrib.get(_MELD_ID)
 
 # replace element factory
 def Replace(text, structure=False):
@@ -466,7 +533,7 @@ _HTMLATTRS_BOOLEAN      = ['selected', 'checked', 'compact', 'declare',
                            'defer', 'disabled', 'ismap', 'multiple', 'nohref',
                            'noresize', 'noshade', 'nowrap']
 
-def _write_html(file, node, encoding, namespaces):
+def _write_html(file, node, encoding, namespaces, depth=-1, maxdepth=None):
     " Write HTML to file """
     if encoding is None:
         encoding = 'utf-8'
@@ -525,7 +592,16 @@ def _write_html(file, node, encoding, namespaces):
                 else:
                     file.write(_escape_cdata(node.text, encoding))
             for n in node:
-                _write_html(file, n, encoding, namespaces)
+                if maxdepth is not None:
+                    depth = depth + 1
+                    if depth < maxdepth:
+                        _write_html(file, n, encoding, namespaces, depth,
+                                    maxdepth)
+                    elif depth == maxdepth:
+                        file.write(' [...]\n')
+                                 
+                else:
+                    _write_html(file, n, encoding, namespaces)
             file.write("</" + _encode(tag, encoding) + ">")
         else:
             tag = node.tag
@@ -664,6 +740,10 @@ def prefeed(data, doctype=doctype.xhtml):
     if data.find('xmlns:meld') == -1:
         data = insert_meld_ns_decl(data)
     return data
+
+def diffreduce(elements):
+    # come up with a reasonable diff-reducing algorithm here ;-)
+    return elements
 
 def test(filename):
     root = parse_xml(open(filename, 'r'))

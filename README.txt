@@ -174,7 +174,7 @@ Examples
   is largely like rendering to XML except it by default doesn't emit
   the XML declaration and it removes all "html" namespace declarations
   from the output.  It also emits a XHTML 'loose' doctype declaration
-  near the top of the document:
+  near the top of the document::
 
     import sys
     root.write_xhtml(sys.stdout)
@@ -270,6 +270,9 @@ Element API
     "findmeld(name, default=None)": searches the this element and its
     children for elements that have a 'meld:id' attribute that matches
     "name"; if no element can be found, return the default.
+
+    "meldid()": Returns the "meld id" of the element or None if the element
+    has no meld id.
 
     "repeat(iterable, childname=None)": repeats an element with values
     from an iterable.  If 'childname' is not None, repeat the element on
