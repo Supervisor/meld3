@@ -164,12 +164,17 @@ Examples
                 <html:td>Boys</html:td>
                 <html:td>Ugly</html:td>
               </html:tr>
-            <html:tr class="foo"><html:td>Girls</html:td><html:td>Pretty</html:td></html:tr></html:tbody>
+            <html:tr class="foo">
+                <html:td>Girls</html:td>
+                <html:td>Pretty</html:td>
+              </html:tr>
+            </html:tbody>
           </html:table>
           <html:input name="next" type="submit" value=" Next " />
           </html:form>
         </html:div>
       </html:body>
+    </html:html>
 
   We can also serialize our element tree as well-formed XHTML, which
   is largely like rendering to XML except it by default doesn't emit
@@ -200,7 +205,11 @@ Examples
                 <td>Boys</td>
                 <td>Ugly</td>
               </tr>
-            <tr class="foo"><td>Girls</td><td>Pretty</td></tr></tbody>
+            <tr class="foo">
+                <td>Girls</td>
+                <td>Pretty</td>
+              </tr>
+            </tbody>
           </table>
           <input name="next" type="submit" value=" Next " />
           </form>
@@ -250,7 +259,11 @@ Examples
                 <td>Boys</td>
                 <td>Ugly</td>
               </tr>
-            <tr class="foo"><td>Girls</td><td>Pretty</td></tr></tbody>
+            <tr class="foo">
+                <td>Girls</td>
+                <td>Pretty</td>
+              </tr>
+            </tbody>
           </table>
           <input name="next" type="submit" value=" Next ">
           </form>

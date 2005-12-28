@@ -110,55 +110,6 @@ class _MeldElementInterface(_ElementInterface):
             return None
         return default
 
-    def diffmeld(self, other):
-        """ Compute the meld element differences from this node (the
-        source) to 'other' (the target).  Return a dictionary of
-        sequences in the form {'added':[], 'removed':[], 'moved':[]}"""
-        def sharedparents(srcelement, tgtelement):
-            srcparent = srcelement.parent
-            tgtparent = tgtelement.parent
-            srcparenttag = getattr(srcparent, 'tag', None)
-            tgtparenttag = getattr(tgtparent, 'tag', None)
-            if srcparenttag != tgtparenttag:
-                return False
-            elif tgtparenttag is None and srcparenttag is None:
-                return True
-            elif tgtparent and srcparent:
-                return sharedparents(srcparent, tgtparent)
-            return False
-
-        srcelements = self.findmelds()
-        srcids = {}
-        for element in srcelements:
-            srcids[element.attrib[_MELD_ID]] = element
-
-        tgtelements = other.findmelds()
-        tgtids = {}
-        for element in tgtelements:
-            tgtids[element.attrib[_MELD_ID]] = element
-        
-        removed = []
-        for srcid in srcids:
-            if srcid not in tgtids:
-                removed.append(srcids[srcid])
-
-        added = []
-        for tgtid in tgtids:
-            if tgtid not in srcids:
-                added.append(tgtids[tgtid])
-                
-        moved = []
-        for srcid in srcids:
-            if srcid in tgtids:
-                srcelement = srcids[srcid]
-                tgtelement = tgtids[srcid]
-                if not sharedparents(srcelement, tgtelement):
-                    moved.append(tgtelement)
-
-        moved = diffreduce(moved)
-
-        return {'added':added, 'removed':removed, 'moved':moved}
-            
     def findmelds(self):
         iterator = self.getiterator()
         elements = []
@@ -349,6 +300,42 @@ class _MeldElementInterface(_ElementInterface):
         file.seek(0)
         return file.read()
 
+    def diffmeld(self, other):
+        """ Compute the meld element differences from this node (the
+        source) to 'other' (the target).  Return a dictionary of
+        sequences in the form {'added':[], 'removed':[], 'moved':[]}"""
+        srcelements = self.findmelds()
+        srcids = {}
+        for element in srcelements:
+            srcids[element.attrib[_MELD_ID]] = element
+
+        tgtelements = other.findmelds()
+        tgtids = {}
+        for element in tgtelements:
+            tgtids[element.attrib[_MELD_ID]] = element
+        
+        removed = []
+        for srcid in srcids:
+            if srcid not in tgtids:
+                removed.append(srcids[srcid])
+
+        added = []
+        for tgtid in tgtids:
+            if tgtid not in srcids:
+                added.append(tgtids[tgtid])
+                
+        moved = []
+        for srcid in srcids:
+            if srcid in tgtids:
+                srcelement = srcids[srcid]
+                tgtelement = tgtids[srcid]
+                if not sharedlineage(srcelement, tgtelement):
+                    moved.append(tgtelement)
+
+        moved = diffreduce(moved)
+
+        return {'added':added, 'removed':removed, 'moved':moved}
+            
     def meldid(self):
         return self.attrib.get(_MELD_ID)
 
@@ -754,6 +741,19 @@ def prefeed(data, doctype=doctype.xhtml):
     if data.find('xmlns:meld') == -1:
         data = insert_meld_ns_decl(data)
     return data
+
+def sharedlineage(srcelement, tgtelement):
+    srcparent = srcelement.parent
+    tgtparent = tgtelement.parent
+    srcparenttag = getattr(srcparent, 'tag', None)
+    tgtparenttag = getattr(tgtparent, 'tag', None)
+    if srcparenttag != tgtparenttag:
+        return False
+    elif tgtparenttag is None and srcparenttag is None:
+        return True
+    elif tgtparent and srcparent:
+        return sharedlineage(srcparent, tgtparent)
+    return False
 
 def diffreduce(elements):
     # come up with a reasonable diff-reducing algorithm here ;-)
