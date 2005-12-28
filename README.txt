@@ -46,11 +46,12 @@ Differences from PyMeld
     (e.g. write_xml, wwrite_xhtml).
 
   - Output can be performed in "XML mode", "XHTML mode" and "HTML
-    mode".  "HTML mode" doesn't "autoclose" most tags with a separate
-    ending tag nor does it strip HTML-related namespace declarations.
-    For example, if you create an empty textarea element and output it
-    in XML mode the output will be rendered <'textarea/>'.  In HTML
-    mode, it will be rendered as '<textarea></textarea>'.  You can
+    mode".  HTML output follows recommendations for HTML 4.01, while
+    XML and XHTML output outputs valid XML If you create an empty
+    textarea element and output it in XML and XHTML mode the output
+    will be rendered <'textarea/>'.  In HTML mode, it will be rendered
+    as '<textarea></textarea>'.  In HTML mode, various other tags like
+    'img' aren't "balanced" with an ending tag, and so forth.  You can
     decide how you wish to render your templates by passing an 'html'
     flag to the meld 'writer'.
 
@@ -445,6 +446,9 @@ Parsing API
   include the meld3 namespace declaration (conventionally on the root
   element).  For example, '<html
   xmlns:meld="http://www.plope.com/software/meld3">...</html>'
+
+  parse_html and parse_htmlstring take an optional "encoding" argument
+  which specifies the document source encoding.
 
 To Do
 

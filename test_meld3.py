@@ -305,11 +305,13 @@ class MeldElementInterfaceTests(unittest.TestCase):
         span = self._makeOne('span', {})
         span2 = self._makeOne('span', {'id':'2'})
         span3 = self._makeOne('span3', {'id':'3'})
+        span3.text = 'abc'
+        span3.tail = '  '
         div.append(span)
         span.append(span2)
         span2.append(span3)
-        div2 = div.clone()
 
+        div2 = div.clone()
         self.assertEqual(div.tag, div2.tag)
         self.assertEqual(div.attrib, div2.attrib)
         self.assertEqual(div[0].tag, div2[0].tag)
@@ -318,7 +320,9 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(div[0][0].attrib, div2[0][0].attrib)
         self.assertEqual(div[0][0][0].tag, div2[0][0][0].tag)
         self.assertEqual(div[0][0][0].attrib, div2[0][0][0].attrib)
-        
+        self.assertEqual(div[0][0][0].text, div2[0][0][0].text)
+        self.assertEqual(div[0][0][0].tail, div2[0][0][0].tail)
+
         self.failIfEqual(id(div), id(div2))
         self.failIfEqual(id(div[0]), id(div2[0]))
         self.failIfEqual(id(div[0][0]), id(div2[0][0]))

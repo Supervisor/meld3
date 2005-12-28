@@ -319,6 +319,8 @@ class _MeldElementInterface(_ElementInterface):
         append the element to the parent.  Recurse as necessary to create
         a deep clone of the element. """
         element = self.makeelement(self.tag, self.attrib.copy())
+        element.text = self.text
+        element.tail = self.tail
         if parent is not None:
             parent.append(element)
         for child in self.getchildren():

@@ -1,5 +1,9 @@
 0.4
 
+  The clone() method of elements copied neither the text nor the tail
+  of the element (this is what caused markup created by "repeats" to
+  fall all on one line).
+
   Add diffing capability to meld nodes.  The file 'melddiff.py' shows an
   example of using the diff API.
 
