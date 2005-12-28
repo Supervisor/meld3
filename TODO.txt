@@ -21,8 +21,5 @@
   http-equiv content type tag by default matching the serlialization
   mode.
 
-- Make 'repeat' retain tail cdata on repeated nodes so output looks
-  nicer.
-
 - Investigate why using the "plope.com" namespace identifier is bad.
 
