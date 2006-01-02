@@ -40,9 +40,7 @@ Differences from PyMeld
     actually using it and it's just cluttering up the template.  Also,
     having a separate namespace helps the programmer not stomp on the
     designer by changing identifiers (or needing to grep stylesheets),
-    and lets them avoid fighting over what to call elements.  That said,
-    it's kind of a tossup.  Some people might be more comfortable if
-    the meld identifier was the XML identifier.
+    and lets them avoid fighting over what to call elements.
 
   - The "id" attribute used to mark up is in the a separate namespace
     (aka. xmlns="http://www.plope.com/software/meld3").  So instead of
