@@ -26,6 +26,23 @@ Differences from PyMeld
   - Templates created for use under PyMeld will not work under meld3
     due to differences in meld tag identification (meld3's id
     attributes are in a nondefault XML namespace, PyMeld's are not).
+    Rationale: it should be possible to look at a template and have a
+    good shot at figuring out which pieces of it might get replaced
+    with dynamic content.  XML ids are required for other things like
+    CSS styles, so you can't assume if you see an XML id in a template
+    that it was put in there to be a meld identifier.  In the worst
+    case scenario, if XML ids were used instead of namespaced id's,
+    and an unused id was present in the source document, the designer
+    would leave it in there even if he wasn't using it because he
+    would think it was a meld id and the programmer would leave it in
+    there even if he wasn't using it because he would think it was
+    being used by the designer's stylesheets.  Menawhile, nobody's
+    actually using it and it's just cluttering up the template.  Also,
+    having a separate namespace helps the programmer not stomp on the
+    designer by changing identifiers (or needing to grep stylesheets),
+    and lets them avoid fighting over what to call elements.  That said,
+    it's kind of a tossup.  Some people might be more comfortable if
+    the meld identifier was the XML identifier.
 
   - The "id" attribute used to mark up is in the a separate namespace
     (aka. xmlns="http://www.plope.com/software/meld3").  So instead of
