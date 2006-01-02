@@ -21,6 +21,10 @@ Requirements
 
   ElementTree 1.2+ (http://effbot.org/downloads/#elementtree)
 
+Installation
+
+  Run 'python setup.py install'.
+
 Differences from PyMeld
 
   - Templates created for use under PyMeld will not work under meld3
