@@ -303,41 +303,58 @@ class _MeldElementInterface(_ElementInterface):
     def diffmeld(self, other):
         """ Compute the meld element differences from this node (the
         source) to 'other' (the target).  Return a dictionary of
-        sequences in the form {'added':[], 'removed':[], 'moved':[]}"""
+        sequences in the form {'unreduced:
+               {'added':[], 'removed':[], 'moved':[]},
+                               'reduced':
+               {'added':[], 'removed':[], 'moved':[]},}
+                               """
         srcelements = self.findmelds()
-        srcids = {}
-        for element in srcelements:
-            srcids[element.attrib[_MELD_ID]] = element
-
         tgtelements = other.findmelds()
-        tgtids = {}
-        for element in tgtelements:
-            tgtids[element.attrib[_MELD_ID]] = element
+        srcids = [ x.meldid() for x in srcelements ]
+        tgtids = [ x.meldid() for x in tgtelements ]
         
         removed = []
-        for srcid in srcids:
-            if srcid not in tgtids:
-                removed.append(srcids[srcid])
+        for srcelement in srcelements:
+            if srcelement.meldid() not in tgtids:
+                removed.append(srcelement)
 
         added = []
-        for tgtid in tgtids:
-            if tgtid not in srcids:
-                added.append(tgtids[tgtid])
+        for tgtelement in tgtelements:
+            if tgtelement.meldid() not in srcids:
+                added.append(tgtelement)
                 
         moved = []
-        for srcid in srcids:
+        for srcelement in srcelements:
+            srcid = srcelement.meldid()
             if srcid in tgtids:
-                srcelement = srcids[srcid]
-                tgtelement = tgtids[srcid]
+                i = tgtids.index(srcid)
+                tgtelement = tgtelements[i]
                 if not sharedlineage(srcelement, tgtelement):
                     moved.append(tgtelement)
 
-        moved = diffreduce(moved)
+        unreduced = {'added':added, 'removed':removed, 'moved':moved}
 
-        return {'added':added, 'removed':removed, 'moved':moved}
+        moved_reduced = diffreduce(moved)
+        added_reduced = diffreduce(added)
+        removed_reduced = diffreduce(removed)
+
+        reduced = {'moved':moved_reduced, 'added':added_reduced,
+                   'removed':removed_reduced}
+
+        return {'unreduced':unreduced,
+                'reduced':reduced}
             
     def meldid(self):
         return self.attrib.get(_MELD_ID)
+
+    def lineage(self):
+        L = []
+        parent = self
+        while parent is not None:
+            L.append(parent)
+            parent = parent.parent
+        return L
+
 
 # replace element factory
 def Replace(text, structure=False):
@@ -756,8 +773,25 @@ def sharedlineage(srcelement, tgtelement):
     return False
 
 def diffreduce(elements):
-    # come up with a reasonable diff-reducing algorithm here ;-)
-    return elements
+    # each element in 'elements' should all have non-None meldids, and should
+    # be preordered in depth-first traversal order
+    reduced = []
+    for element in elements:
+        parent = element.parent
+        if parent is None:
+            reduced.append(element)
+            continue
+        if parent in reduced:
+            continue
+        reduced.append(element)
+    return reduced
+    
+def intersection(S1, S2):
+    L = []
+    for element in S1:
+        if element in S2:
+            L.append(element)
+    return L
 
 def test(filename):
     root = parse_xml(open(filename, 'r'))

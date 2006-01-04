@@ -346,6 +346,48 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(child.parent, None)
         self.assertRaises(IndexError, parent.__getitem__, 0)
 
+    def test_lineage(self):
+        from meld3 import _MELD_ID
+        div1 = self._makeOne('div', {_MELD_ID:'div1'})
+        span1 = self._makeOne('span', {_MELD_ID:'span1'})
+        span2 = self._makeOne('span', {_MELD_ID:'span2'})
+        span3 = self._makeOne('span', {_MELD_ID:'span3'})
+        span4 = self._makeOne('span', {_MELD_ID:'span4'})
+        span5 = self._makeOne('span', {_MELD_ID:'span5'})
+        span6 = self._makeOne('span', {_MELD_ID:'span6'})
+        unknown = self._makeOne('span', {})
+        div2 = self._makeOne('div2', {_MELD_ID:'div2'})
+        div1.append(span1)
+        span1.append(span2)
+        span2.append(span3)
+        span3.append(unknown)
+        unknown.append(span4)
+        span4.append(span5)
+        span5.append(span6)
+        div1.append(div2)
+        def ids(L):
+            return [ x.meldid() for x in L ]
+        self.assertEqual(ids(div1.lineage()), ['div1'])
+        self.assertEqual(ids(span1.lineage()), ['span1', 'div1'])
+        self.assertEqual(ids(span2.lineage()), ['span2', 'span1', 'div1'])
+        self.assertEqual(ids(span3.lineage()), ['span3', 'span2', 'span1',
+                                                    'div1'])
+        self.assertEqual(ids(unknown.lineage()), [None, 'span3', 'span2',
+                                                  'span1',
+                                                  'div1'])
+        self.assertEqual(ids(span4.lineage()), ['span4', None, 'span3',
+                                                'span2',
+                                                'span1','div1'])
+
+        self.assertEqual(ids(span5.lineage()), ['span5', 'span4', None,
+                                                'span3', 'span2',
+                                                'span1','div1'])
+        self.assertEqual(ids(span6.lineage()), ['span6', 'span5', 'span4',
+                                                None,'span3', 'span2',
+                                                    'span1','div1'])
+        self.assertEqual(ids(div2.lineage()), ['div2', 'div1'])
+                         
+
     def test_shortrepr(self):
         div = self._makeOne('div', {'id':'div1'})
         span = self._makeOne('span', {})
@@ -357,20 +399,18 @@ class MeldElementInterfaceTests(unittest.TestCase):
         div2 = self._makeOne('div2', {'id':'div2'})
         div.append(span)
         span.append(span2)
-        span2.append(span3)
-        span3.append(span4)
-        span4.append(span5)
         div.append(div2)
         r = div.shortrepr()
-        self.assertEqual(r, '<div id="div1"><span><span id="2"> [...]\n</span></span><div2 id="div2"></div2></div>')
-
+        self.assertEqual(r, '<div id="div1"><span><span id="2"></span></span><div2 id="div2"></div2></div>')
+        
     def test_shortrepr2(self):
         from meld3 import parse_xmlstring
         root = parse_xmlstring(_COMPLEX_XHTML)
         r = root.shortrepr()
         self.assertEqual(r, '<html>\n  <head>\n    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">\n     [...]\n</head>\n  <!--  a comment  -->\n   [...]\n</html>')
 
-    def test_diffmeld(self):
+
+    def test_diffmeld1(self):
         from meld3 import parse_xmlstring
         from meld3 import _MELD_ID
         root = parse_xmlstring(_COMPLEX_XHTML)
@@ -382,7 +422,10 @@ class MeldElementInterfaceTests(unittest.TestCase):
         title = clone.findmeld('title')
         title.deparent()
         clone.append(title)
-        changes = root.diffmeld(clone)
+
+        # unreduced
+        diff = root.diffmeld(clone)
+        changes = diff['unreduced']
         addedtags = [ x.attrib[_MELD_ID] for x in changes['added'] ]
         removedtags = [x.attrib[_MELD_ID] for x in changes['removed'] ]
         movedtags = [ x.attrib[_MELD_ID] for x in changes['moved'] ]
@@ -392,6 +435,244 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(addedtags,['newdiv'])
         self.assertEqual(removedtags,['td1', 'td2', 'tr'])
         self.assertEqual(movedtags, ['title'])
+
+        # reduced
+        changes = diff['reduced']
+        addedtags = [ x.attrib[_MELD_ID] for x in changes['added'] ]
+        removedtags = [x.attrib[_MELD_ID] for x in changes['removed'] ]
+        movedtags = [ x.attrib[_MELD_ID] for x in changes['moved'] ]
+        addedtags.sort()
+        removedtags.sort()
+        movedtags.sort()
+        self.assertEqual(addedtags,['newdiv'])
+        self.assertEqual(removedtags,['tr'])
+        self.assertEqual(movedtags, ['title'])
+
+    def test_diffmeld2(self):
+        source = """
+        <root>
+          <a meld:id="a">
+             <b meld:id="b"></b>
+          </a>
+        </root>"""
+        target = """
+        <root>
+          <a meld:id="a"></a>
+          <b meld:id="b"></b>
+        </root>
+        """
+        from meld3 import parse_htmlstring
+        source_root = parse_htmlstring(source)
+        target_root = parse_htmlstring(target)
+        changes = source_root.diffmeld(target_root)
+
+        # unreduced
+        actual = [x.meldid() for x in changes['unreduced']['moved']]
+        expected = ['b']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['unreduced']['added']]
+        expected = []
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['unreduced']['removed']]
+        expected = []
+        self.assertEqual(expected, actual)
+
+        # reduced
+        actual = [x.meldid() for x in changes['reduced']['moved']]
+        expected = ['b']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['reduced']['added']]
+        expected = []
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['reduced']['removed']]
+        expected = []
+        self.assertEqual(expected, actual)
+
+                         
+    def test_diffmeld3(self):
+        source = """
+        <root>
+          <a meld:id="a">
+             <b meld:id="b">
+               <c meld:id="c"></c>
+             </b>
+          </a>
+          <z meld:id="z">
+            <y meld:id="y"></y>
+          </z>
+        </root>
+        """
+        target = """
+        <root>
+          <b meld:id="b">
+            <c meld:id="c"></c>
+          </b>
+          <a meld:id="a"></a>
+          <d meld:id="d">
+             <e meld:id="e"></e>
+          </d>
+        </root>
+        """
+        from meld3 import parse_htmlstring
+        source_root = parse_htmlstring(source)
+        target_root = parse_htmlstring(target)
+        changes = source_root.diffmeld(target_root)
+
+        # unreduced
+        actual = [x.meldid() for x in changes['unreduced']['moved']]
+        expected = ['b', 'c']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['unreduced']['added']]
+        expected = ['d', 'e']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['unreduced']['removed']]
+        expected = ['z', 'y']
+        self.assertEqual(expected, actual)
+
+        # reduced
+        actual = [x.meldid() for x in changes['reduced']['moved']]
+        expected = ['b']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['reduced']['added']]
+        expected = ['d']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['reduced']['removed']]
+        expected = ['z']
+        self.assertEqual(expected, actual)
+
+    def test_diffmeld4(self):
+        source = """
+        <root>
+          <a meld:id="a">
+             <b meld:id="b">
+               <c meld:id="c">
+                 <d meld:id="d"></d>
+               </c>
+             </b>
+          </a>
+          <z meld:id="z">
+            <y meld:id="y"></y>
+          </z>
+        </root>
+        """
+        target = """
+        <root>
+          <p>
+            <a meld:id="a">
+               <b meld:id="b"></b>
+            </a>
+          </p>
+          <p>
+            <m meld:id="m">
+              <n meld:id="n"></n>
+            </m>
+          </p>
+        </root>
+        """
+        from meld3 import parse_htmlstring
+        source_root = parse_htmlstring(source)
+        target_root = parse_htmlstring(target)
+        changes = source_root.diffmeld(target_root)
+
+        # unreduced
+        actual = [x.meldid() for x in changes['unreduced']['moved']]
+        expected = ['a', 'b']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['unreduced']['added']]
+        expected = ['m', 'n']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['unreduced']['removed']]
+        expected = ['c', 'd', 'z', 'y']
+        self.assertEqual(expected, actual)
+
+        # reduced
+        actual = [x.meldid() for x in changes['reduced']['moved']]
+        expected = ['a']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['reduced']['added']]
+        expected = ['m']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['reduced']['removed']]
+        expected = ['c', 'z']
+        self.assertEqual(expected, actual)
+
+    def test_diffmeld5(self):
+        source = """
+        <root>
+          <a meld:id="a">
+             <b meld:id="b">
+               <c meld:id="c">
+                 <d meld:id="d"></d>
+               </c>
+             </b>
+          </a>
+          <z meld:id="z">
+            <y meld:id="y"></y>
+          </z>
+        </root>
+        """
+        target = """
+        <root>
+          <p>
+            <a meld:id="a">
+               <b meld:id="b">
+                 <p>
+                   <c meld:id="c">
+                     <d meld:id="d"></d>
+                   </c>
+                 </p>
+               </b>
+            </a>
+          </p>
+          <z meld:id="z">
+            <y meld:id="y"></y>
+          </z>
+        </root>
+        """
+        from meld3 import parse_htmlstring
+        source_root = parse_htmlstring(source)
+        target_root = parse_htmlstring(target)
+        changes = source_root.diffmeld(target_root)
+
+        # unreduced
+        actual = [x.meldid() for x in changes['unreduced']['moved']]
+        expected = ['a', 'b', 'c', 'd']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['unreduced']['added']]
+        expected = []
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['unreduced']['removed']]
+        expected = []
+        self.assertEqual(expected, actual)
+
+        # reduced
+        actual = [x.meldid() for x in changes['reduced']['moved']]
+        expected = ['a', 'c']
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['reduced']['added']]
+        expected = []
+        self.assertEqual(expected, actual)
+
+        actual = [x.meldid() for x in changes['reduced']['removed']]
+        expected = []
+        self.assertEqual(expected, actual)
+        
+
 
 class ParserTests(unittest.TestCase):
     def _parse(self, *args):
