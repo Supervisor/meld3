@@ -11,8 +11,6 @@ from elementtree.ElementTree import Comment
 from elementtree.ElementTree import ProcessingInstruction
 from elementtree.ElementTree import QName
 from elementtree.ElementTree import _raise_serialization_error
-from elementtree.ElementTree import _escape_cdata
-from elementtree.ElementTree import _escape_attrib
 from elementtree.ElementTree import _encode
 from elementtree.ElementTree import _namespace_map
 from elementtree.ElementTree import fixtag
@@ -54,7 +52,7 @@ class _MeldElementInterface(_ElementInterface):
         element = self[index]
         element.parent = None # remove any potential circref
         _ElementInterface.__delitem__(self, index)
-        
+
     def append(self, element):
         _ElementInterface.append(self, element)
         element.parent = self
@@ -118,7 +116,7 @@ class _MeldElementInterface(_ElementInterface):
             if val is not None:
                 elements.append(element)
         return elements
-        
+
     # ZPT-alike methods
     def repeat(self, iterable, childname=None):
         """repeats an element with values from an iterable.  If
@@ -274,7 +272,7 @@ class _MeldElementInterface(_ElementInterface):
         element.tail = self.tail
         if parent is not None:
             parent.append(element)
-        for child in self.getchildren():
+        for child in self._children:
             child.clone(element)
         return element
 
@@ -513,7 +511,6 @@ class HTMLMeldParser(HTMLParser):
         self.builder.data(data)
         self.builder.end(Comment)
 
-
 def do_parse(source, parser):
     root = et_parse(source, parser=parser).getroot()
     iterator = root.getiterator()
@@ -521,7 +518,7 @@ def do_parse(source, parser):
         for c in p:
             c.parent = p
     return root
-    
+
 def parse_xml(source):
     """ Parse source (a filelike object) into an element tree.  If
     html is true, use a parser that can resolve somewhat ambiguous
@@ -707,6 +704,39 @@ def _write_xml(file, node, encoding, namespaces, pipeline, xhtml=False):
     if node.tail:
         file.write(_escape_cdata(node.tail, encoding))
 
+# overrides to elementtree to increase speed
+
+def _escape_cdata(text, encoding=None):
+    # escape character data
+    try:
+        if encoding:
+            try:
+                text = _encode(text, encoding)
+            except UnicodeError:
+                return _encode_entity(text)
+        text = text.replace("&", "&amp;")
+        text = text.replace("<", "&lt;")
+        text = text.replace(">", "&gt;")
+        return text
+    except (TypeError, AttributeError):
+        _raise_serialization_error(text)
+
+def _escape_attrib(text, encoding=None):
+    # escape attribute value
+    try:
+        if encoding:
+            try:
+                text = _encode(text, encoding)
+            except UnicodeError:
+                return _encode_entity(text)
+        text = text.replace("&", "&amp;")
+        text = text.replace("'", "&apos;") # FIXME: overkill
+        text = text.replace("\"", "&quot;")
+        text = text.replace("<", "&lt;")
+        text = text.replace(">", "&gt;")
+        return text
+    except (TypeError, AttributeError):
+        _raise_serialization_error(text)
 
 # utility functions
 
@@ -793,22 +823,43 @@ def intersection(S1, S2):
             L.append(element)
     return L
 
-def test(filename):
-    root = parse_xml(open(filename, 'r'))
-    ob = root.findmeld('tr')
-    values = []
-    for thing in range(0, 20):
-        values.append((str(thing), str(thing)))
+def melditerator(element, meldid=None, _MELD_ID=_MELD_ID):
+    nodeid = element.attrib.get(_MELD_ID)
+    if nodeid is not None:
+        if meldid is None or nodeid == meldid:
+            yield element
+    for child in element._children:
+        for el2 in melditerator(child, meldid):
+            nodeid = el2.attrib.get(_MELD_ID)
+            if nodeid is not None:
+                if meldid is None or nodeid == meldid:
+                    yield el2
+
+class IO:
+    def __init__(self):
+        self.data = []
+
+    def write(self, data):
+        self.data.append(data)
+
+def test(root, values):
+    clone = root.clone()
+    ob = clone.findmeld('tr')
     for tr, (name, desc) in ob.repeat(values):
         tr.findmeld('td1').content(name)
         tr.findmeld('td2').content(desc)
-    root.write_xml(StringIO())
+    clone.write_html(IO())
     
 if __name__ == '__main__':
     import sys
     filename = sys.argv[1]
     import timeit
-    t = timeit.Timer("test('%s')" % filename, "from __main__ import test")
+    root = parse_xml(open(filename, 'r'))
+    values = []
+    for thing in range(0, 20):
+        values.append((str(thing), str(thing)))
+    t = timeit.Timer("test(root,values)",
+                     "from __main__ import test, root, values")
     print t.timeit(300) / 300
     
     

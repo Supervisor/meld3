@@ -12,6 +12,10 @@
   moved values are reduced to the smallest number of tags which share
   a common lineage.
 
+  Add a few speed tweaks.
+
+  Add a meldprofile.py script.
+
 0.4
 
   The clone() method of elements copied neither the text nor the tail
