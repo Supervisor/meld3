@@ -1,3 +1,17 @@
+0.5
+
+  Change 'diffmeld()' to return a dictionary of dictionaries.
+
+  The dictionary returned by diffmeld has the keys 'reduced' and 'unreduced'.
+  the values of both 'reduced' and 'unreduced' is another dictionary.
+  The leafmost dictionary has the keys 'added', 'removed', and 'moved.
+
+  In the 'unreduced' dictionary, *all* meld tags that have been added,
+  removed, or moved are present (this was the behavior of diffmeld
+  previously).  In the 'reduced' dictionary, the added, removed, and
+  moved values are reduced to the smallest number of tags which share
+  a common lineage.
+
 0.4
 
   The clone() method of elements copied neither the text nor the tail
