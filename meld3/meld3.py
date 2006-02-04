@@ -704,7 +704,9 @@ def _write_xml(file, node, encoding, namespaces, pipeline, xhtml=False):
     if node.tail:
         file.write(_escape_cdata(node.tail, encoding))
 
-# overrides to elementtree to increase speed
+# overrides to elementtree to increase speed and get entity quoting correct.
+
+nonentity_re = re.compile('&(?!([#\w]*;))') # negative lookahead assertion
 
 def _escape_cdata(text, encoding=None):
     # escape character data
@@ -714,9 +716,8 @@ def _escape_cdata(text, encoding=None):
                 text = _encode(text, encoding)
             except UnicodeError:
                 return _encode_entity(text)
-        text = text.replace("&", "&amp;")
+        text = nonentity_re.sub('&amp;', text)
         text = text.replace("<", "&lt;")
-        text = text.replace(">", "&gt;")
         return text
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
@@ -729,11 +730,10 @@ def _escape_attrib(text, encoding=None):
                 text = _encode(text, encoding)
             except UnicodeError:
                 return _encode_entity(text)
-        text = text.replace("&", "&amp;")
-        text = text.replace("'", "&apos;") # FIXME: overkill
-        text = text.replace("\"", "&quot;")
+        # don't requote properly-quoted entities
+        text = nonentity_re.sub('&amp;', text)
         text = text.replace("<", "&lt;")
-        text = text.replace(">", "&gt;")
+        text = text.replace('"', "&quot;")
         return text
     except (TypeError, AttributeError):
         _raise_serialization_error(text)

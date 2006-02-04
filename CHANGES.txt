@@ -1,16 +1,24 @@
 0.5
 
-  Change 'diffmeld()' to return a dictionary of dictionaries.
+  Fix text and attribute serialization to only quote ampersands that
+  aren't already part of entities.
 
-  The dictionary returned by diffmeld has the keys 'reduced' and 'unreduced'.
-  the values of both 'reduced' and 'unreduced' is another dictionary.
-  The leafmost dictionary has the keys 'added', 'removed', and 'moved.
+  Do the minimal possible thing to escape text and attribute values during
+  rendering.  For text, this is escaping ampersands that aren't parts of 
+  entities and the less-than (<) character.  For attribute values, this is
+  amps and less-than as well as the quote (") character.  This was done
+  partly because I think the spec allows it but it's also what Kid does,
+  shrug.
 
-  In the 'unreduced' dictionary, *all* meld tags that have been added,
-  removed, or moved are present (this was the behavior of diffmeld
-  previously).  In the 'reduced' dictionary, the added, removed, and
-  moved values are reduced to the smallest number of tags which share
-  a common lineage.
+  Change 'diffmeld()' to return a dictionary of dictionaries.  The
+  dictionary returned by diffmeld has the keys 'reduced' and
+  'unreduced'.  the values of both 'reduced' and 'unreduced' is
+  another dictionary.  The leafmost dictionary has the keys 'added',
+  'removed', and 'moved.  In the 'unreduced' dictionary, *all* meld
+  tags that have been added, removed, or moved are present (this was
+  the behavior of diffmeld previously).  In the 'reduced' dictionary,
+  the added, removed, and moved values are reduced to the smallest
+  number of tags which share a common lineage.
 
   Add a few speed tweaks.
 

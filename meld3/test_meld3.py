@@ -1030,7 +1030,7 @@ class WriterTests(unittest.TestCase):
             //
               // this won't be escaped in html output
               function match(a,b) {
-                 if (a &lt; b &amp;&amp; a &gt; 0) then { return 1 }
+                 if (a &lt; b &amp;&amp; a > 0) then { return 1 }
                 }
              //
     </script>
@@ -1278,14 +1278,14 @@ class WriterTests(unittest.TestCase):
     def test_content_nostructure(self):
         root = self._parse(_SIMPLE_XML)
         D = root.findmeld('description')
-        D.content('description &<foo> <bar>', structure=False)
+        D.content('description &<foo>&amp;<bar>', structure=False)
         actual = self._write_xml(root)
         expected = """<?xml version="1.0"?>
         <root>
         <list>
         <item>
         <name>Name</name>
-          <description>description &amp;&lt;foo&gt; &lt;bar&gt;</description>
+          <description>description &amp;&lt;foo>&amp;&lt;bar></description>
         </item>
         </list>
         </root>"""
@@ -1310,14 +1310,14 @@ class WriterTests(unittest.TestCase):
     def test_replace_nostructure(self):
         root = self._parse(_SIMPLE_XML)
         D = root.findmeld('description')
-        D.replace('description &<foo> <bar>', structure=False)
+        D.replace('description &<foo>&amp;<bar>', structure=False)
         actual = self._write_xml(root)
         expected = """<?xml version="1.0"?>
         <root>
         <list>
         <item>
         <name>Name</name>
-          description &amp;&lt;foo&gt; &lt;bar&gt;
+          description &amp;&lt;foo>&amp;&lt;bar>
         </item>
         </list>
         </root>"""
@@ -1338,6 +1338,16 @@ class WriterTests(unittest.TestCase):
         </list>
         </root>"""
         self.assertNormalizedXMLEqual(actual, expected)
+
+    def test_escape_cdata(self):
+        a = '< > &lt;&amp; &&apos; && &foo "" http://www.plope.com?foo=bar&bang=baz &#123;'
+        from meld3 import _escape_cdata
+        self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo "" http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_cdata(a))
+
+    def test_escape_attrib(self):
+        a = '< > &lt;&amp; &&apos; && &foo "" http://www.plope.com?foo=bar&bang=baz &#123;'
+        from meld3 import _escape_attrib
+        self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo &quot;&quot; http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_attrib(a))
 
 def normalize_html(s):
     s = re.sub(r"[ \t]+", " ", s)

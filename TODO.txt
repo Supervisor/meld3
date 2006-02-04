@@ -8,8 +8,6 @@
   that qualified namespace, or just output it by default in XHTML mode
   only if that makes sense).
 
-- Come up with better diff reduction.
-
 - Revisit <![CDATA serialization.  Currently CDATA containers are
   thrown away at parse time, and are thus not present in the output
   stream.  Investigate how different browsers deal with this (esp. wrt
