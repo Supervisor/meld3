@@ -1,5 +1,17 @@
 0.5
 
+  Internal speedups:
+
+    - Avoid function call overhead in various places by inlining code.
+
+    - _write_html/_write_xml now accept a callable "write" argument
+      instead of a file argument (avoid file.write call overhead).
+
+    - HTML serializer only calls _escape_cdata/_escape_attrib if necessary
+      instead of calling it without regard to its need.
+
+    - Use string.encode(encoding) instead of calling an _encode function.
+
   Fix text and attribute serialization to only quote ampersands that
   aren't already part of entities.
 

@@ -51,8 +51,8 @@ if __name__ == '__main__':
     profiler.run("run(root)")
     profiler.close() 
     stats = hotshot.stats.load("logfile.dat")
-    #stats.strip_dirs()
-    stats.sort_stats('cumulative', 'calls')
-    #stats.sort_stats('calls')
+    stats.strip_dirs()
+    #stats.sort_stats('cumulative', 'calls')
+    stats.sort_stats('calls')
     stats.print_stats(200)
 
