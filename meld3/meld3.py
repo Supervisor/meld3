@@ -81,10 +81,6 @@ class _MeldElementInterface(_ElementInterface):
 
     # meld-specific
 
-    def parse(self, src, xhtml=True):
-        """ Shortcut to parse module-scope function """
-        return parse(src, xhtml)
-
     def __mod__(self, other):
         """ Fill in the text values of meld nodes in tree; only
         support dictionarylike operand (sequence operand doesn't seem
