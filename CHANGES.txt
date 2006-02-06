@@ -1,5 +1,7 @@
 0.5
 
+  Remove unused parse method.
+
   Add __setslice__, __delslice__, remove methods that correctly update
   parent pointers.
 
