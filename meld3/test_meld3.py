@@ -346,6 +346,39 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(child.parent, None)
         self.assertRaises(IndexError, parent.__getitem__, 0)
 
+    def test_setslice(self):
+        parent = self._makeOne('parent', {})
+        child1 = self._makeOne('child1', {})
+        child2 = self._makeOne('child2', {})
+        child3 = self._makeOne('child3', {})
+        children = (child1, child2, child3)
+        parent[0:2] = children
+        self.assertEqual(child1.parent, parent)
+        self.assertEqual(child2.parent, parent)
+        self.assertEqual(child3.parent, parent)
+        self.assertEqual(parent._children, list(children))
+
+    def test_delslice(self):
+        parent = self._makeOne('parent', {})
+        child1 = self._makeOne('child1', {})
+        child2 = self._makeOne('child2', {})
+        child3 = self._makeOne('child3', {})
+        children = (child1, child2, child3)
+        parent[0:2] = children
+        del parent[0:2]
+        self.assertEqual(child1.parent, None)
+        self.assertEqual(child2.parent, None)
+        self.assertEqual(child3.parent, parent)
+        self.assertEqual(len(parent._children), 1)
+
+    def test_remove(self):
+        parent = self._makeOne('parent', {})
+        child1 = self._makeOne('child1', {})
+        parent.append(child1)
+        parent.remove(child1)
+        self.assertEqual(child1.parent, None)
+        self.assertEqual(len(parent._children), 0)
+
     def test_lineage(self):
         from meld3 import _MELD_ID
         div1 = self._makeOne('div', {_MELD_ID:'div1'})

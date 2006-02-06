@@ -44,21 +44,36 @@ class _MeldElementInterface(_ElementInterface):
 
     # overrides to support parent pointers
     def __setitem__(self, index, element):
-        _ElementInterface.__setitem__(self, index, element)
+        self._children[index] = element
         element.parent = self
 
-    def __delitem__(self, index):
-        element = self[index]
-        element.parent = None # remove any potential circref
-        _ElementInterface.__delitem__(self, index)
+    def __setslice__(self, start, stop, elements):
+        for element in elements:
+            element.parent = self
+        self._children[start:stop] = list(elements)
 
     def append(self, element):
-        _ElementInterface.append(self, element)
+        self._children.append(element)
         element.parent = self
 
     def insert(self, index, element):
-        _ElementInterface.insert(self, index, element)
+        self._children.insert(index, element)
         element.parent = self
+
+    def __delitem__(self, index):
+        ob = self._children[index]
+        ob.parent = None
+        del self._children[index]
+
+    def __delslice__(self, start, stop):
+        obs = self._children[start:stop]
+        for ob in obs:
+            ob.parent = None
+        del self._children[start:stop]
+
+    def remove(self, element):
+        self._children.remove(element)
+        element.parent = None
 
     # overrides to support subclassing (use correct factories/functions)
     def makeelement(self, tag, attrib):
