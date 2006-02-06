@@ -1,5 +1,10 @@
 0.5
 
+  Add __setslice__, __delslice__, remove methods that correctly update
+  parent pointers.
+
+  Don't call into superclass to do append, insert, __setitem__, etc.
+
   Internal speedups:
 
     - Avoid function call overhead in various places by inlining code.
