@@ -1,4 +1,4 @@
-from distutils.core import setup
+from distutils.core import setup, Extension
 
 setup(
     name = 'meld3',
@@ -9,4 +9,6 @@ setup(
     license='see LICENSE.txt',
     packages=['meld3'],
     url='http://www.plope.com/software/meld3',
+    ext_modules=[Extension("meld3/cmeld3",
+                           ["meld3/cmeld3.c"])]
 )
