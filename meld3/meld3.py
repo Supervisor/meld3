@@ -4,7 +4,6 @@ import types
 import mimetools
 from StringIO import StringIO
 
-from elementtree.ElementTree import _ElementInterface
 from elementtree.ElementTree import TreeBuilder
 from elementtree.ElementTree import XMLTreeBuilder
 from elementtree.ElementTree import Comment
@@ -14,10 +13,46 @@ from elementtree.ElementTree import _raise_serialization_error
 from elementtree.ElementTree import _namespace_map
 from elementtree.ElementTree import fixtag
 from elementtree.ElementTree import parse as et_parse
+from elementtree.ElementTree import ElementPath
 from elementtree.HTMLTreeBuilder import HTMLParser
 from elementtree.HTMLTreeBuilder import IGNOREEND
 from elementtree.HTMLTreeBuilder import AUTOCLOSE
 from elementtree.HTMLTreeBuilder import is_not_ascii
+
+try:
+    import cmeld3 as helper
+except ImportError:
+    class Helper:
+        def findmeld(self, node, name, default=None):
+            iterator = self.getiterator(node)
+            for element in iterator:
+                val = element.attrib.get(_MELD_ID)
+                if val == name:
+                    return element
+            return default
+
+        def clone(self, node, parent=None):
+            element = _MeldElementInterface(node.tag, node.attrib.copy())
+            element.text = node.text
+            element.tail = node.tail
+            if parent is not None:
+                # avoid calling self.append to reduce function call overhead
+                parent._children.append(element)
+                element.parent = parent
+            for child in node._children:
+                self.clone(child, element)
+            return element
+
+        def getiterator(self, node, tag=None):
+            nodes = []
+            if tag == "*":
+                tag = None
+            if tag is None or node.tag == tag:
+                nodes.append(node)
+            for element in node._children:
+                nodes.extend(self.getiterator(element, tag))
+            return nodes
+    helper = Helper()
 
 _MELD_NS_URL  = 'http://www.plope.com/software/meld3'
 _MELD_PREFIX  = '{%s}' % _MELD_NS_URL
@@ -39,10 +74,64 @@ class doctype:
     xhtml        = ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
                     'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd')
 
-class _MeldElementInterface(_ElementInterface):
+class _MeldElementInterface:
     parent = None
+    attrib = None
+    text   = None
+    tail   = None
 
-    # overrides to support parent pointers
+    # overrides to reduce MRU lookups
+    def __init__(self, tag, attrib):
+        self.tag = tag
+        self.attrib = attrib
+        self._children = []
+
+    def __repr__(self):
+        return "<MeldElement %s at %x>" % (self.tag, id(self))
+
+    def __len__(self):
+        return len(self._children)
+
+    def __getitem__(self, index):
+        return self._children[index]
+
+    def __getslice__(self, start, stop):
+        return self._children[start:stop]
+
+    def getchildren(self):
+        return self._children
+
+    def find(self, path):
+        return ElementPath.find(self, path)
+
+    def findtext(self, path, default=None):
+        return ElementPath.findtext(self, path, default)
+
+    def findall(self, path):
+        return ElementPath.findall(self, path)
+
+    def clear(self):
+        self.attrib.clear()
+        self._children = []
+        self.text = self.tail = None
+
+    def get(self, key, default=None):
+        return self.attrib.get(key, default)
+
+    def set(self, key, value):
+        self.attrib[key] = value
+
+    def keys(self):
+        return self.attrib.keys()
+
+    def items(self):
+        return self.attrib.items()
+
+    def getiterator(self, tag=None):
+        return helper.getiterator(self)
+
+    # overrides to support parent pointers and factories
+
     def __setitem__(self, index, element):
         self._children[index] = element
         element.parent = self
@@ -75,9 +164,8 @@ class _MeldElementInterface(_ElementInterface):
         self._children.remove(element)
         element.parent = None
 
-    # overrides to support subclassing (use correct factories/functions)
     def makeelement(self, tag, attrib):
-        return _MeldElementInterface(tag, attrib)
+        return self.__class__(tag, attrib)
 
     # meld-specific
 
@@ -103,23 +191,19 @@ class _MeldElementInterface(_ElementInterface):
                 node.text = kw[k]
         return unfilled
 
-    def findmeld(self, name, default=_marker):
+    def findmeld(self, name, default=None):
         """ Find a node in the tree that has a 'meld id' corresponding
         to 'name'. Iterate over all subnodes recursively looking for a
         node which matches.  If we can't find the node, return None."""
         # this could be faster if we indexed all the meld nodes in the
         # tree; we just walk the whole hierarchy now.
-        iterator = self.getiterator()
-        for element in iterator:
-            val = element.attrib.get(_MELD_ID)
-            if val == name:
-                return element
-        if default is _marker:
-            return None
-        return default
+        result = helper.findmeld(self, name)
+        if result is None:
+            return default
+        return result
 
     def findmelds(self):
-        iterator = self.getiterator()
+        iterator = helper.getiterator(self)
         elements = []
         for element in iterator:
             val = element.attrib.get(_MELD_ID)
@@ -181,8 +265,12 @@ class _MeldElementInterface(_ElementInterface):
         for child in self._children:
             child.parent = None # clean up potential circrefs
         self.text = None
+        #node = Replace(text, structure)
+        # reduce function call overhead by not calling Replace
+        node = self.__class__(Replace, {})
+        node.text = text
+        node.structure = structure
         # reduce function call overhead by not calling self.append
-        node = Replace(text, structure)
         node.parent = self
         self._children = [node]
 
@@ -299,17 +387,8 @@ class _MeldElementInterface(_ElementInterface):
         """ Create a clone of an element.  If parent is not None,
         append the element to the parent.  Recurse as necessary to create
         a deep clone of the element. """
-        element = self.__class__(self.tag, self.attrib.copy())
-        element.text = self.text
-        element.tail = self.tail
-        if parent is not None:
-            # avoid calling self.append to reduce function call overhead
-            parent._children.append(element)
-            element.parent = parent
-        for child in self._children:
-            child.clone(element)
-        return element
-
+        return helper.clone(self, parent)
+    
     def deparent(self):
         """ Remove ourselves from our parent node (de-parent) and return
         the index of the parent which was deleted. """
