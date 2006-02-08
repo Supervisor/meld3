@@ -1,7 +1,7 @@
 import sys
 import profile as profiler
 import pstats
-import cProfile
+#import cProfile
 
 sys.path.insert(0, '/Users/chrism/projects/meld/z310/lib/python')
 from zope.pagetemplate.pagetemplate import PageTemplate
@@ -41,7 +41,6 @@ def test(pt):
     foo = pt(values=values)
 
 def profile(num):
-    profiler = cProfile
     profiler.run("[test(pt) for x in range(0,20)]", 'logfile_zpt.dat')
     stats = pstats.Stats('logfile_zpt.dat')
     stats.strip_dirs()

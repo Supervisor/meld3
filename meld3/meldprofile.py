@@ -2,7 +2,7 @@
 import profile as profiler
 import pstats
 import meld3
-import cProfile
+#import cProfile
 # get rid of the noise of setting up an encoding
 # in profile output
 '.'.encode('utf-8')
@@ -60,9 +60,7 @@ def run(root, trace=False):
     io.clear()
 
 def profile(num):
-    profiler = cProfile
     profiler.run("[run(root) for x in range(0,20)]", 'logfile.dat')
-    #profiler.run("[run(root) for x in range(0,20)]")
     stats = pstats.Stats('logfile.dat')
     stats.strip_dirs()
     stats.sort_stats('cumulative', 'calls')
