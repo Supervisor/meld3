@@ -1,9 +1,8 @@
 #!/Users/chrism/projects/revelation/bin/python
-import hotshot
-import hotshot.stats
 import profile as profiler
 import pstats
 import meld3
+import cProfile
 # get rid of the noise of setting up an encoding
 # in profile output
 '.'.encode('utf-8')
@@ -61,11 +60,9 @@ def run(root, trace=False):
     io.clear()
 
 def profile(num):
-    #profiler= hotshot.Profile("logfile.dat")
-    #profiler.run("run(root)")
-    profiler.run("run(root)", 'logfile.dat')
-    #profiler.close() 
-    #stats = hotshot.stats.load("logfile.dat")
+    profiler = cProfile
+    profiler.run("[run(root) for x in range(0,20)]", 'logfile.dat')
+    #profiler.run("[run(root) for x in range(0,20)]")
     stats = pstats.Stats('logfile.dat')
     stats.strip_dirs()
     stats.sort_stats('cumulative', 'calls')
@@ -74,6 +71,7 @@ def profile(num):
 
 if __name__ == '__main__':
     root = meld3.parse_xmlstring(template)
+    run(root)
     profile(40)
     import timeit
     t = timeit.Timer("run(root)", "from __main__ import run, root")

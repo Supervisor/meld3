@@ -1,8 +1,8 @@
 import sys
-import hotshot
-import hotshot.stats
 import profile as profiler
 import pstats
+import cProfile
+
 sys.path.insert(0, '/Users/chrism/projects/meld/z310/lib/python')
 from zope.pagetemplate.pagetemplate import PageTemplate
 
@@ -41,11 +41,8 @@ def test(pt):
     foo = pt(values=values)
 
 def profile(num):
-    #profiler= hotshot.Profile("logfile_zpt.dat")
-    #profiler.run("test(pt)")
-    profiler.run("test(pt)", 'logfile_zpt.dat')
-    #profiler.close() 
-    #stats = hotshot.stats.load("logfile_zpt.dat")
+    profiler = cProfile
+    profiler.run("[test(pt) for x in range(0,20)]", 'logfile_zpt.dat')
     stats = pstats.Stats('logfile_zpt.dat')
     stats.strip_dirs()
     stats.sort_stats('cumulative', 'calls')
@@ -55,6 +52,7 @@ def profile(num):
 if __name__ == '__main__':
     pt = mypt()
     pt.write(template)
+    test(pt)
     profile(30)
     import timeit
     t = timeit.Timer("test(pt)", "from __main__ import test, pt")

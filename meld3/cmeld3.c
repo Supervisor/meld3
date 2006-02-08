@@ -2,63 +2,103 @@
 
 static PyObject *PySTR__class__, *PySTR__dict__, *PySTR_children;
 static PyObject *PySTRattrib, *PySTRparent, *PySTR_MELD_ID;
-static PyObject *PySTRtag, *PySTRtext, *PySTRtail;
+static PyObject *PySTRtag, *PySTRtext, *PySTRtail, *PySTRstructure;
 
 static PyObject*
 clone(PyObject *node, PyObject *parent)
 {
+    PyObject *klass;
+    PyObject *children;
+    PyObject *text;
+    PyObject *tail;
+    PyObject *tag;
+    PyObject *attrib;
+    PyObject *structure;
 
-    PyObject *klass    = PyObject_GetAttr(node, PySTR__class__);
-    PyObject *children = PyObject_GetAttr(node, PySTR_children);
-    PyObject *text     = PyObject_GetAttr(node, PySTRtext);
-    PyObject *tail     = PyObject_GetAttr(node, PySTRtail);
-    /*PyObject *dict     = PyObject_GetAttr(node, PySTR__dict__);*/
-    PyObject *tag      = PyObject_GetAttr(node, PySTRtag);
-    PyObject *attrib   = PyObject_GetAttr(node, PySTRattrib);
-   
-    /* element = self.__class__(self.tag, self.attrib.copy()) */
+    PyObject *newdict;
+    PyObject *newchildren;
+    PyObject *attrib_copy;
 
-    PyObject *newdict = PyDict_New();
-    PyObject *newchildren = PyList_New(0);
-    PyObject *attrib_copy = PyDict_Copy(attrib);
+    if (!(klass = PyObject_GetAttr(node, PySTR__class__))) {
+	return NULL;
+    }
+    if (!(children = PyObject_GetAttr(node, PySTR_children))) {
+	return NULL;
+    }
+    if (!(text = PyObject_GetAttr(node, PySTRtext))) {
+	return NULL;
+    }
+    if (!(tail = PyObject_GetAttr(node, PySTRtail))) {
+	return NULL;
+    }
+    if (!(tag = PyObject_GetAttr(node, PySTRtag))) {
+	return NULL;
+    }
+
+    if (!(attrib = PyObject_GetAttr(node, PySTRattrib))) {
+	return NULL;
+    }
+
+    if (!(structure = PyObject_GetAttr(node, PySTRstructure))) {
+	return NULL;
+    }
+
+    if (!(newdict = PyDict_New())) {
+	    return NULL;
+    }
+
+    if (!(newchildren = PyList_New(0))) {
+	    return NULL;
+    }
+    attrib_copy = PyDict_Copy(attrib);
 
     PyDict_SetItem(newdict, PySTR_children, newchildren);
     PyDict_SetItem(newdict, PySTRattrib, attrib_copy);
     PyDict_SetItem(newdict, PySTRtext, text);
     PyDict_SetItem(newdict, PySTRtail, tail);
     PyDict_SetItem(newdict, PySTRtag, tag);
+    PyDict_SetItem(newdict, PySTRstructure, structure);
     
+    /* element = self.__class__(self.tag, self.attrib.copy()) */
     /* element.tail = self.tail */
-    /*PyObject_SetAttr(element, PySTRtail, tail);
-    PyObject *args = PyTuple_Pack(2, tag, attrib_copy);
-    PyObject *element = PyObject_CallObject(klass, args);*/
+    /* element.text = self.text */
 
     PyObject *element = PyInstance_NewRaw(klass, newdict);
+    if (element == NULL) return NULL;
  
-    /* element.text = self.text */
-    
-    /*PyObject_SetAttr(element, PySTRtext, text);*/
-    
-    /* element.tail = self.tail */
-    /*PyObject_SetAttr(element, PySTRtail, tail);*/
-    
     /* if parent is not None:
        parent._children.append(element)
        element.parent = parent */
+
+    PyObject *pchildren;
     
     if (parent != Py_None) {
-        PyObject *pchildren = PyObject_GetAttr(parent, PySTR_children);
-	PyList_Append(pchildren, element);
-	PyObject_SetAttr(element, PySTRparent, parent);
+        if (!(pchildren = PyObject_GetAttr(parent, PySTR_children))) {
+	    return NULL;
 	}
-    
+	if (PyList_Append(pchildren, element)) {
+	    return NULL;
+	}
+	if (PyObject_SetAttr(element, PySTRparent, parent)) {
+	    return NULL;
+	}
+    }
+
     /* for child in self._children:
        child.clone(element) */
 
     int len, i;
     len = PyList_Size(children);
+    if (len < 0) {
+	return NULL;
+    }
+
+    PyObject *child;
+
     for (i = 0; i < len; i++) {
-	PyObject *child = PyList_GetItem(children, i);
+	if (!(child = PyList_GetItem(children, i))) {
+	    return NULL;
+	}
 	clone(child, element);
 	}
     
@@ -86,16 +126,27 @@ append the clone to the parent.\n";
 
 static PyObject*
 getiterator(PyObject *node, PyObject *list) {
+    if (PyList_Append(list, node) == -1) {
+	return NULL;
+    }
     Py_INCREF(node);
-    PyList_Append(list, node);
+    PyObject *children;
+    PyObject *child;
 
-    PyObject *children = PyObject_GetAttr(node, PySTR_children);
+    if (!(children = PyObject_GetAttr(node, PySTR_children))) {
+	return NULL;
+    }
+
     int len, i;
     len = PyList_Size(children);
+    if (len < 0) {
+	return NULL;
+    }
 
     for (i = 0; i < len; i++) {
-	PyObject *child = PyList_GetItem(children, i);
-        Py_INCREF(child);
+	if (!(child = PyList_GetItem(children, i))) {
+	    return NULL;
+	}
         getiterator(child, list);
 	}
     
@@ -110,8 +161,16 @@ getiteratorhandler(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:getiterator", &node)) {
 	return NULL;
     }
-    PyObject *list = PyList_New(0);
-    PyObject *result = getiterator(node, list);
+    PyObject *list;
+    PyObject *result;
+    if (!(list = PyList_New(0))) {
+	return NULL;
+    }
+    result = getiterator(node, list);
+    if (result == NULL) {
+	PyList_SetSlice(list, 0, PyList_GET_SIZE(list), (PyObject *)NULL);
+	Py_DECREF(list);
+    }
     return result;
 }
 
@@ -192,6 +251,7 @@ initcmeld3(void)
     DEFINE_STRING(attrib);
     DEFINE_STRING(text);
     DEFINE_STRING(tail);
+    DEFINE_STRING(structure);
 #undef DEFINE_STRING
     PySTR_MELD_ID = PyString_FromString(_MELD_ID);
     if (!PySTR_MELD_ID) {
