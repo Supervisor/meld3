@@ -883,7 +883,7 @@ def _write_html_no_encoding(write, node, namespaces, depth=-1, maxdepth=None):
                 if maxdepth is not None:
                     depth = depth + 1
                     if depth < maxdepth:
-                        _write_html_no_encoding(string, n, namespaces, depth,
+                        _write_html_no_encoding(write, n, namespaces, depth,
                                                 maxdepth)
                     elif depth == maxdepth:
                         write(' [...]\n')
