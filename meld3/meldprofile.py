@@ -27,24 +27,9 @@ template = """<html xmlns:meld="http://www.plope.com/software/meld3">
   </body>
 </html>"""
 
-class IO:
-    def __init__(self):
-        self.data = []
-
-    def write(self, data):
-        self.data.append(data)
-
-    def getvalue(self):
-        return ''.join(self.data)
-
-    def clear(self):
-        self.data = []
-
 values = []
 for thing in range(0, 20):
     values.append((str(thing), str(thing)))
-
-io = IO()
 
 def run(root):
     clone = root.clone()
@@ -52,13 +37,11 @@ def run(root):
     for tr, (name, desc) in ob.repeat(values):
         tr.findmeld('td1').content(name)
         tr.findmeld('td2').content(desc)
-    clone.write_html(io)
-    foo = io.getvalue()
-    io.clear()
+    foo = clone.write_htmlstring()
 
 def profile(num):
-    import cProfile
-    profiler = cProfile
+##     import cProfile
+##     profiler = cProfile
     profiler.run("[run(root) for x in range(0,100)]", 'logfile.dat')
     stats = pstats.Stats('logfile.dat')
     stats.strip_dirs()

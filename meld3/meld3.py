@@ -317,6 +317,18 @@ class _MeldElementInterface:
             self.attrib[k] = kw[k]
 
     # output methods
+    def write_xmlstring(self, encoding=None, doctype=None, fragment=False,
+                        declaration=True, pipeline=False):
+        data = []
+        write = data.append
+        if not fragment:
+            if declaration:
+                _write_declaration(write, encoding)
+            if doctype:
+                _write_doctype(write, doctype)
+        _write_xml(write, self, encoding, {}, pipeline)
+        return ''.join(data)
+        
     def write_xml(self, file, encoding=None, doctype=None,
                   fragment=False, declaration=True, pipeline=False):
         """ Write XML to 'file' (which can be a filename or filelike object)
@@ -335,20 +347,35 @@ class _MeldElementInterface:
         pipeline    - preserve 'meld' namespace identifiers in output
                       for use in pipelining
         """
-        # use a list as a collector, and only call the write method of
-        # the file once we've collected all output (reduce function call
-        # overhead)
-        io = IO()
-        write = io.write
         if not hasattr(file, "write"):
             file = open(file, "wb")
-        if not fragment:
-            if declaration:
-                _write_declaration(write, encoding)
-            if doctype:
-                _write_doctype(write, doctype)
-        _write_xml(write, self, encoding, {}, pipeline)
-        file.write(io.data)
+        data = self.write_xmlstring(encoding, doctype, fragment, declaration,
+                                    pipeline)
+        file.write(data)
+
+    def write_htmlstring(self, encoding=None, doctype=doctype.html,
+                         fragment=False):
+        data = []
+        write = data.append
+        if encoding is None:
+            encoding = 'utf8'
+        if encoding in ('utf8', 'utf-8', 'latin-1', 'latin1',
+                        'ascii'):
+            # optimize for common dumb-American case (only encode once at
+            # the end)
+            if not fragment:
+                if doctype:
+                    _write_doctype(write, doctype)
+            _write_html_no_encoding(write, self, {})
+            joined = ''.join(data)
+            return joined
+        else:
+            if not fragment:
+                if doctype:
+                    _write_doctype(write, doctype)
+            _write_html(write, self, encoding, {})
+            joined = ''.join(data)
+            return joined
 
     def write_html(self, file, encoding=None, doctype=doctype.html,
                    fragment=False):
@@ -372,29 +399,20 @@ class _MeldElementInterface:
         """
         if not hasattr(file, "write"):
             file = open(file, "wb")
+        page = self.write_htmlstring(encoding, doctype, fragment)
+        file.write(page)
+
+    def write_xhtmlstring(self, encoding=None, doctype=doctype.xhtml,
+                          fragment=False, declaration=False, pipeline=False):
         data = []
         write = data.append
-        if encoding is None:
-            encoding = 'utf8'
-        if encoding in ('utf8', 'utf-8', 'latin-1', 'latin1',
-                        'ascii'):
-            # optimize for common dumb-American case (only encode once at
-            # the end)
-            if not fragment:
-                if doctype:
-                    _write_doctype(write, doctype)
-            _write_html_no_encoding(write, self, {})
-            joined = ''.join(data)
-            if isinstance(joined, str):
-                file.write(joined)
-            else:
-                file.write(joined.encode(encoding))
-        else:
-            if not fragment:
-                if doctype:
-                    _write_doctype(write, doctype)
-            _write_html(write, self, encoding, {})
-            file.write(''.join(data))
+        if not fragment:
+            if declaration:
+                _write_declaration(write, encoding)
+            if doctype:
+                _write_doctype(write, doctype)
+        _write_xml(write, self, encoding, {}, pipeline, xhtml=True)
+        return ''.join(data)
 
     def write_xhtml(self, file, encoding=None, doctype=doctype.xhtml,
                     fragment=False, declaration=False, pipeline=False):
@@ -420,13 +438,9 @@ class _MeldElementInterface:
         write = data.append
         if not hasattr(file, "write"):
             file = open(file, "wb")
-        if not fragment:
-            if declaration:
-                _write_declaration(write, encoding)
-            if doctype:
-                _write_doctype(write, doctype)
-        _write_xml(write, self, encoding, {}, pipeline, xhtml=True)
-        file.write(''.join(data))
+        page = self.write_xhtmlstring(encoding, doctype, fragment, declaration,
+                                      pipeline)
+        file.write(page)
             
     def clone(self, parent=None):
         """ Create a clone of an element.  If parent is not None,
@@ -758,7 +772,8 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
 
         if attrib is not None:
             if len(attrib) > 1:
-                attrib_keys = sorted(attrib)
+                attrib_keys = attrib.keys()
+                attrib_keys.sort()
             else:
                 attrib_keys = attrib
             for k in attrib_keys:
@@ -858,7 +873,9 @@ def _write_html_no_encoding(write, node, namespaces):
 
         if attrib is not None:
             if len(attrib) > 1:
-                attrib_keys = sorted(attrib)
+                attrib_keys = attrib.keys()
+                attrib_keys.sort()
+                
             else:
                 attrib_keys = attrib
             for k in attrib_keys:
