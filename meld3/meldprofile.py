@@ -2,7 +2,6 @@
 import profile as profiler
 import pstats
 import meld3
-#import cProfile
 # get rid of the noise of setting up an encoding
 # in profile output
 '.'.encode('utf-8')
@@ -47,20 +46,20 @@ for thing in range(0, 20):
 
 io = IO()
 
-def run(root, trace=False):
+def run(root):
     clone = root.clone()
     ob = clone.findmeld('tr')
     for tr, (name, desc) in ob.repeat(values):
         tr.findmeld('td1').content(name)
         tr.findmeld('td2').content(desc)
-    if trace:
-        import pdb; pdb.set_trace()
     clone.write_html(io)
     foo = io.getvalue()
     io.clear()
 
 def profile(num):
-    profiler.run("[run(root) for x in range(0,20)]", 'logfile.dat')
+    import cProfile
+    profiler = cProfile
+    profiler.run("[run(root) for x in range(0,100)]", 'logfile.dat')
     stats = pstats.Stats('logfile.dat')
     stats.strip_dirs()
     stats.sort_stats('cumulative', 'calls')
@@ -70,9 +69,17 @@ def profile(num):
 if __name__ == '__main__':
     root = meld3.parse_xmlstring(template)
     run(root)
-    profile(40)
+    profile(30)
     import timeit
     t = timeit.Timer("run(root)", "from __main__ import run, root")
-    print "300 runs", t.timeit(300)
+    repeat = 50
+    number = 20
+    result = t.repeat(repeat, number)
+    best = min(result)
+    print "%d loops " % repeat
+    usec = best * 1e6 / number
+    msec = usec / 1000
+    print "best of %d: %.*g msec per loop" % (repeat, 8, msec)
+        
     #run(root, trace=True)
 

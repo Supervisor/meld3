@@ -3,6 +3,9 @@
 static PyObject *PySTR__class__, *PySTR__dict__, *PySTR_children;
 static PyObject *PySTRattrib, *PySTRparent, *PySTR_MELD_ID;
 static PyObject *PySTRtag, *PySTRtext, *PySTRtail, *PySTRstructure;
+static PyObject *PySTRReplace;
+
+static PyObject *emptyattrs, *emptychildren = NULL;
 
 static PyObject*
 clone(PyObject *node, PyObject *parent)
@@ -14,42 +17,38 @@ clone(PyObject *node, PyObject *parent)
     PyObject *tag;
     PyObject *attrib;
     PyObject *structure;
+    PyObject *dict;
 
     PyObject *newdict;
     PyObject *newchildren;
     PyObject *attrib_copy;
+    PyObject *element;
 
-    if (!(klass = PyObject_GetAttr(node, PySTR__class__))) {
-	return NULL;
-    }
-    if (!(children = PyObject_GetAttr(node, PySTR_children))) {
-	return NULL;
-    }
-    if (!(text = PyObject_GetAttr(node, PySTRtext))) {
-	return NULL;
-    }
-    if (!(tail = PyObject_GetAttr(node, PySTRtail))) {
-	return NULL;
-    }
-    if (!(tag = PyObject_GetAttr(node, PySTRtag))) {
-	return NULL;
-    }
+    if (!(klass = PyObject_GetAttr(node, PySTR__class__))) return NULL;
+    if (!(dict = PyObject_GetAttr(node, PySTR__dict__))) return NULL;
 
-    if (!(attrib = PyObject_GetAttr(node, PySTRattrib))) {
-	return NULL;
+    if (!(children = PyDict_GetItem(dict, PySTR_children))) return NULL;
+    if (!(tag = PyDict_GetItem(dict, PySTRtag))) return NULL;
+    if (!(attrib = PyDict_GetItem(dict, PySTRattrib))) return NULL;
+
+    if (!(text = PyDict_GetItem(dict, PySTRtext))) {
+	text = Py_None;
+    }
+    if (!(tail = PyDict_GetItem(dict, PySTRtail))) {
+	tail = Py_None;
+    }
+    if (!(structure = PyDict_GetItem(dict, PySTRstructure))) {
+	structure = Py_None;
     }
 
-    if (!(structure = PyObject_GetAttr(node, PySTRstructure))) {
-	return NULL;
-    }
+    Py_INCREF(text);
+    Py_INCREF(tail);
+    Py_INCREF(tag);
+    Py_INCREF(structure);
 
-    if (!(newdict = PyDict_New())) {
-	    return NULL;
-    }
+    if (!(newdict = PyDict_New())) return NULL;
+    if (!(newchildren = PyList_New(0))) return NULL;
 
-    if (!(newchildren = PyList_New(0))) {
-	    return NULL;
-    }
     attrib_copy = PyDict_Copy(attrib);
 
     PyDict_SetItem(newdict, PySTR_children, newchildren);
@@ -63,8 +62,10 @@ clone(PyObject *node, PyObject *parent)
     /* element.tail = self.tail */
     /* element.text = self.text */
 
-    PyObject *element = PyInstance_NewRaw(klass, newdict);
-    if (element == NULL) return NULL;
+    if (!(element = PyInstance_NewRaw(klass, newdict))) return NULL;
+
+    Py_DECREF(klass);
+    Py_DECREF(dict);
  
     /* if parent is not None:
        parent._children.append(element)
@@ -73,15 +74,9 @@ clone(PyObject *node, PyObject *parent)
     PyObject *pchildren;
     
     if (parent != Py_None) {
-        if (!(pchildren = PyObject_GetAttr(parent, PySTR_children))) {
-	    return NULL;
-	}
-	if (PyList_Append(pchildren, element)) {
-	    return NULL;
-	}
-	if (PyObject_SetAttr(element, PySTRparent, parent)) {
-	    return NULL;
-	}
+        if (!(pchildren = PyObject_GetAttr(parent, PySTR_children))) return NULL;
+	if (PyList_Append(pchildren, element)) return NULL;
+	if (PyObject_SetAttr(element, PySTRparent, parent)) return NULL;
     }
 
     /* for child in self._children:
@@ -89,9 +84,7 @@ clone(PyObject *node, PyObject *parent)
 
     int len, i;
     len = PyList_Size(children);
-    if (len < 0) {
-	return NULL;
-    }
+    if (len < 0) return NULL;
 
     PyObject *child;
 
@@ -184,12 +177,14 @@ static char* _MELD_ID = "{http://www.plope.com/software/meld3}id";
 
 static PyObject*
 findmeld(PyObject *node, PyObject *name) {
-    PyObject *attrib = PyObject_GetAttr(node, PySTRattrib);
-    PyObject *meldid = PyDict_GetItem(attrib, PySTR_MELD_ID);
-    PyObject *result = Py_None;
+    PyObject *attrib, *meldid, *result;
+    if (!(attrib = PyObject_GetAttr(node, PySTRattrib))) return NULL;
+    meldid = PyDict_GetItem(attrib, PySTR_MELD_ID);
+    result = Py_None;
 
     if (meldid != NULL) {
-        if ( PyUnicode_Compare(meldid, name) == 0) {
+	int compareresult = PyUnicode_Compare(meldid, name);
+	if (compareresult == 0) {
 	    result = node;
 	}
     }
@@ -216,12 +211,12 @@ findmeld(PyObject *node, PyObject *name) {
 static PyObject*
 findmeldhandler(PyObject *self, PyObject *args)
 {
-    PyObject *node, *name;
+    PyObject *node, *name, *result;
 	
     if (!PyArg_ParseTuple(args, "OO:findmeld", &node, &name)) {
 	return NULL;
     }
-    PyObject *result = findmeld(node, name);
+    if (!(result = findmeld(node, name))) return NULL;
     Py_INCREF(result);
     return result;
 }
@@ -231,10 +226,64 @@ static char findmeldhandler_doc[] =
 \n\
 Return a meld node or None.\n";
 
+static PyObject*
+contenthandler(PyObject *self, PyObject *args) {
+    PyObject *node, *text, *structure;
+	
+    if (!PyArg_ParseTuple(args, "OOO:content", &node, &text, &structure)) {
+	return NULL;
+    }
+    PyObject *replace = NULL;
+    PyObject *replacenode  = NULL;
+    PyObject *newchildren  = NULL;
+    PyObject *newdict  = NULL;
+    PyObject *klass  = NULL;
+
+    if (!(klass = PyObject_GetAttr(node, PySTR__class__))) return NULL;
+    if (!(replace = PyObject_GetAttr(node, PySTRReplace))) return NULL;
+    if (!(replace = PyList_GetItem(replace, 0))) return NULL;
+
+    PyObject_SetAttr(node, PySTRtext, Py_None);
+    Py_INCREF(Py_None);
+
+    if (!(newdict = PyDict_New())) return NULL;
+    PyDict_SetItem(newdict, PySTRparent, node);
+    Py_INCREF(node);
+    
+    if (PyDict_SetItem(newdict, PySTRattrib, emptyattrs) == -1) return NULL;
+    Py_INCREF(emptyattrs);
+    if (PyDict_SetItem(newdict, PySTRtext, text) == -1) return NULL;
+    Py_INCREF(text);
+    if (PyDict_SetItem(newdict, PySTRstructure, structure) == -1) return NULL;
+    Py_INCREF(structure);
+    if (PyDict_SetItem(newdict, PySTR_children, emptychildren) == -1) {
+	return NULL;
+    }
+    Py_INCREF(emptychildren);
+    if (PyDict_SetItem(newdict, PySTRtag, replace) == -1) return NULL;
+    Py_INCREF(replace);
+
+    if (!(replacenode = PyInstance_NewRaw(klass, newdict))) return NULL;
+
+    if (!(newchildren = PyList_New(1))) return NULL;
+    PyList_SET_ITEM(newchildren, 0, replacenode);
+    Py_INCREF(replacenode);
+    PyObject_SetAttr(node, PySTR_children, newchildren);
+
+    return replacenode;
+    
+}
+
+static char contenthandler_doc[] =
+"content(node, text, structure)\n\
+\n\
+Add a content node to node.\n";
+
 static PyMethodDef methods[] = {
     {"clone", clonehandler, METH_VARARGS, clonehandler_doc},
     {"getiterator", getiteratorhandler, METH_VARARGS, getiteratorhandler_doc},
     {"findmeld", findmeldhandler, METH_VARARGS, findmeldhandler_doc},
+    {"content", contenthandler, METH_VARARGS, contenthandler_doc},
     {NULL, NULL}
 };
 
@@ -252,11 +301,15 @@ initcmeld3(void)
     DEFINE_STRING(text);
     DEFINE_STRING(tail);
     DEFINE_STRING(structure);
+    DEFINE_STRING(Replace);
 #undef DEFINE_STRING
     PySTR_MELD_ID = PyString_FromString(_MELD_ID);
     if (!PySTR_MELD_ID) {
 	return;
     }
+    emptyattrs = PyDict_New();
+    emptyattrs = PyDictProxy_New(emptyattrs);
+    emptychildren = PyList_New(0);
     Py_InitModule3("cmeld3", methods,
 		   "C helpers for meld3");
 }

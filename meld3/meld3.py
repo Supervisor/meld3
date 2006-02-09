@@ -19,6 +19,13 @@ from elementtree.HTMLTreeBuilder import IGNOREEND
 from elementtree.HTMLTreeBuilder import AUTOCLOSE
 from elementtree.HTMLTreeBuilder import is_not_ascii
 
+# replace element factory
+def Replace(text, structure=False):
+    element = _MeldElementInterface(Replace, {})
+    element.text = text
+    element.structure = structure
+    return element
+
 class IO:
     def __init__(self):
         self.data = ""
@@ -32,7 +39,7 @@ class IO:
     def clear(self):
         self.data = ""
 
-class Helper:
+class PyHelper:
     def findmeld(self, node, name, default=None):
         iterator = self.getiterator(node)
         for element in iterator:
@@ -64,11 +71,24 @@ class Helper:
             nodes.extend(self.getiterator(element, tag))
         return nodes
 
-pyhelper = Helper()
+    def content(self, node, text, structure=False):
+        node.text = None
+        replacenode = Replace(text, structure)
+        replacenode.parent = node
+        replacenode.text = text
+        replacenode.structure = structure
+        node._children = [replacenode]
+
+pyhelper = PyHelper()
 
 try:
-    import cmeld3 as helper
+    import cmeld3 as chelper
 except ImportError:
+    chelper = None
+
+if chelper:
+    helper = chelper
+else:
     helper = pyhelper
     
 _MELD_NS_URL  = 'http://www.plope.com/software/meld3'
@@ -98,6 +118,7 @@ class _MeldElementInterface:
     text   = None
     tail   = None
     structure = None
+    Replace = [Replace] # this is used by C code
 
     # overrides to reduce MRU lookups
     def __init__(self, tag, attrib):
@@ -245,21 +266,23 @@ class _MeldElementInterface:
         in the template. 'data' is a value from the passed in
         iterable.  Changing 'newelement' (typically based on values
         from 'data') mutates the element 'in place'."""
-        if childname is None:
-            element = self
-        else:
+        if childname:
             element = self.findmeld(childname)
+        else:
+            element = self
 
         parent = element.parent
+        # creating a list is faster than yielding a generator (py 2.4)
+        L = []
         first = True
-
         for thing in iterable:
-            if first:
-                yield element, thing
+            if first is True:
+                clone = element
             else:
-                clone = element.clone(parent)
-                yield clone, thing
+                clone = helper.clone(element, parent)
+            L.append((clone, thing))
             first = False
+        return L
 
     def replace(self, text, structure=False):
         """ Replace this element with a Replace node in our parent with
@@ -281,17 +304,7 @@ class _MeldElementInterface:
         contains text.  Always return None.  Pass the 'structure' flag
         to the replace node so it can do the right thing at render
         time."""
-        for child in self._children:
-            child.parent = None # clean up potential circrefs
-        self.text = None
-        #node = Replace(text, structure)
-        # reduce function call overhead by not calling Replace
-        node = self.__class__(Replace, {})
-        node.text = text
-        node.structure = structure
-        # reduce function call overhead by not calling self.append
-        node.parent = self
-        self._children = [node]
+        helper.content(self, text, structure)
 
     def attributes(self, **kw):
         """ Set attributes on this node. """
@@ -365,17 +378,23 @@ class _MeldElementInterface:
             encoding = 'utf8'
         if encoding in ('utf8', 'utf-8', 'latin-1', 'latin1',
                         'ascii'):
-            # optimize for common dumb-American case
+            # optimize for common dumb-American case (only encode once at
+            # the end)
             if not fragment:
                 if doctype:
                     _write_doctype(write, doctype)
             _write_html_no_encoding(write, self, {})
+            joined = ''.join(data)
+            if isinstance(joined, str):
+                file.write(joined)
+            else:
+                file.write(joined.encode(encoding))
         else:
             if not fragment:
                 if doctype:
                     _write_doctype(write, doctype)
             _write_html(write, self, encoding, {})
-        file.write(''.join(data))
+            file.write(''.join(data))
 
     def write_xhtml(self, file, encoding=None, doctype=doctype.xhtml,
                     fragment=False, declaration=False, pipeline=False):
@@ -427,11 +446,7 @@ class _MeldElementInterface:
         """ Return the parent node index in which we live """
         parent = self.parent
         if parent is not None:
-            # avoid calling len(parent) in favor of len(parent._children)
-            # to reduce function call overhead
-            for i in range (len(parent._children)):
-                if parent[i] is self:
-                    return i
+            return parent._children.index(self)
 
     def shortrepr(self, encoding=None):
         data = []
@@ -493,13 +508,6 @@ class _MeldElementInterface:
             parent = parent.parent
         return L
 
-
-# replace element factory
-def Replace(text, structure=False):
-    element = _MeldElementInterface(Replace, {})
-    element.text = text
-    element.structure = structure
-    return element
 
 def MeldTreeBuilder():
     return TreeBuilder(element_factory=_MeldElementInterface)
@@ -680,129 +688,128 @@ def parse_htmlstring(text, encoding=None):
     source = StringIO(text)
     return parse_html(source, encoding)
 
-attrib_needs_escaping = re.compile(r'[&]|["]|[<]').search
-cdata_needs_escaping = re.compile(r'[&]|[<]').search
+attrib_needs_escaping = re.compile(r'[&"<]').search
+cdata_needs_escaping = re.compile(r'[&<]').search
+
+def _both_case(mapping):
+    # Add equivalent upper-case keys to mapping.
+    lc_keys = mapping.keys()
+    for k in lc_keys:
+        mapping[k.upper()] = mapping[k]
+
 
 _HTMLTAGS_UNBALANCED    = {'area':1, 'base':1, 'basefont':1, 'br':1, 'col':1,
                            'frame':1, 'hr':1, 'img':1, 'input':1, 'isindex':1,
                            'link':1, 'meta':1, 'param':1}
+_both_case(_HTMLTAGS_UNBALANCED)
+
 _HTMLTAGS_NOESCAPE      = {'script':1, 'style':1}
+_both_case(_HTMLTAGS_NOESCAPE)
+
 _HTMLATTRS_BOOLEAN      = {'selected':1, 'checked':1, 'compact':1, 'declare':1,
                            'defer':1, 'disabled':1, 'ismap':1, 'multiple':1,
                            'nohref':1, 'noresize':1, 'noshade':1, 'nowrap':1}
-_SIMPLE = {Comment:"<!-- %s -->", ProcessingInstruction:"<?%s?>"}
+_both_case(_HTMLATTRS_BOOLEAN)
 
 def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
     " Write HTML to file """
     if encoding is None:
         encoding = 'utf-8'
 
-    tag = node.tag
+    tag  = node.tag
     tail = node.tail
     text = node.text
     tail = node.tail
 
-    if tag is Comment or tag is ProcessingInstruction:
-        template = _SIMPLE[tag]
-        if cdata_needs_escaping(text):
-            write(template % _escape_cdata(text, encoding))
-        else:
-            write(template % text.encode(encoding))
-            
-    elif tag is Replace:
-        if node.structure:
-            # this may produce invalid html
-            write(text.encode(encoding))
-        else:
+    to_write = ""
+
+    if tag is Replace:
+        if not node.structure:
             if cdata_needs_escaping(text):
-                write(_escape_cdata(text, encoding))
-            else:
-                write(text.encode(encoding))
+                text = _escape_cdata(text)
+        write(text.encode(encoding))
+
+    elif tag is Comment:
+        if cdata_needs_escaping(text):
+            text = _escape_cdata(text)
+        write('<!-- ' + text + ' -->'.encode(encoding))
+
+    elif tag is ProcessingInstruction:
+        if cdata_needs_escaping(text):
+            text = _escape_cdata(text)
+        write('<!-- ' + text + ' -->'.encode(encoding))
+
     else:
-        if tag[:_XHTML_PREFIX_LEN] == _XHTML_PREFIX:
-            tag = tag[_XHTML_PREFIX_LEN:]
-##         if node.attrib:
-##             items = node.attrib.items()
-##         else:
-##             items = ()
         xmlns_items = [] # new namespaces in this scope
         try:
             if tag[:1] == "{":
-                tag, xmlns = fixtag(tag, namespaces)
-                if xmlns:
-                    xmlns_items.append(xmlns)
+                if tag[:_XHTML_PREFIX_LEN] == _XHTML_PREFIX:
+                    tag = tag[_XHTML_PREFIX_LEN:]
+                else:
+                    tag, xmlns = fixtag(tag, namespaces)
+                    if xmlns:
+                        xmlns_items.append(xmlns)
         except TypeError:
             _raise_serialization_error(tag)
-        write("<" + tag.encode(encoding))
-        if node.attrib or xmlns_items:
-##             items.sort() # lexical order
-            for k in node.attrib:
-                v = node.attrib[k]
+
+        to_write += "<%s" % tag.encode(encoding)
+
+        attrib = node.attrib
+
+        if attrib is not None:
+            if len(attrib) > 1:
+                attrib_keys = sorted(attrib)
+            else:
+                attrib_keys = attrib
+            for k in attrib_keys:
                 try:
                     if k[:1] == "{":
                         continue
                 except TypeError:
                     _raise_serialization_error(k)
-                if k.lower() in _HTMLATTRS_BOOLEAN:
-                    write(' %s' % k.encode(encoding))
+                if k in _HTMLATTRS_BOOLEAN:
+                    to_write += ' ' + k.encode(encoding)
                 else:
-##                     if attrib_needs_escaping(v):
-##                         write(" %s=\"%s\"" % (k.encode(encoding),
-##                                               _escape_attrib(v, encoding)))
-##                     else:
-                    write(" %s=\"%s\"" % (k.encode(encoding),
-                                          v.encode(encoding)))
+                    v = attrib[k]
+                    to_write += " %s=\"%s\"" % (k, v)
                         
-            for k, v in xmlns_items:
-##                 if attrib_needs_escaping(v):
-##                     write(" %s=\"%s\"" % (k.encode(encoding),
-##                                           _escape_attrib(v, encoding)))
-##                 else:
-                write(" %s=\"%s\"" % (k.encode(encoding),
-                                      v.encode(encoding)))
-                    
-        if text or node._children:
-            write(">")
-            if text:
-                if tag in _HTMLTAGS_NOESCAPE:
-                    write(text.encode(encoding))
-                elif cdata_needs_escaping(text):
-                    write(_escape_cdata(text, encoding))
-                else:
-                    write(text.encode(encoding))
-
-            for n in node._children:
-                if maxdepth is not None:
-                    depth = depth + 1
-                    if depth < maxdepth:
-                        _write_html(write, n, encoding, namespaces, depth,
-                                    maxdepth)
-                    elif depth == maxdepth:
-                        write(' [...]\n')
-                                 
-                else:
-                    _write_html(write, n, encoding, namespaces)
-            write("</" + tag.encode(encoding) + ">")
-        else:
-            tag = node.tag
-            if tag.startswith('{'):
-                ns_uri, local = tag[1:].split('}', 1)
-                if _namespace_map.get(ns_uri) == 'html':
-                    tag = local
-            if tag.lower() in _HTMLTAGS_UNBALANCED:
-                write('>')
-            else:
-                write('>')
-                write("</" + tag.encode(encoding) + ">")
         for k, v in xmlns_items:
-            del namespaces[v]
+            to_write += " %s=\"%s\"" % (k, v)
+                    
+        to_write += ">"
+
+        if text is not None and text:
+            if tag in _HTMLTAGS_NOESCAPE:
+                to_write += text.encode(encoding)
+            elif cdata_needs_escaping(text):
+                to_write += _escape_cdata(text)
+            else:
+                to_write += text.encode(encoding)
+
+        write(to_write)
+
+        for child in node._children:
+            if maxdepth is not None:
+                depth = depth + 1
+                if depth < maxdepth:
+                    _write_html(write, child, encoding, namespaces, depth,
+                                maxdepth)
+                elif depth == maxdepth and text:
+                    write(' [...]\n')
+
+            else:
+                _write_html(write, child, encoding, namespaces, depth, maxdepth)
+
+        if text or node._children or tag not in _HTMLTAGS_UNBALANCED:
+            write("</" + tag.encode(encoding)  + ">")
+
     if tail:
         if cdata_needs_escaping(tail):
-            write(_escape_cdata(tail, encoding))
+            write(_escape_cdata(tail))
         else:
             write(tail.encode(encoding))
 
-def _write_html_no_encoding(write, node, namespaces, depth=-1, maxdepth=None):
+def _write_html_no_encoding(write, node, namespaces):
     """ Append HTML to string without any particular unicode encoding.
     We have a separate function for this due to the fact that encoding
     while recursing is very expensive if this will get serialized out to
@@ -814,96 +821,79 @@ def _write_html_no_encoding(write, node, namespaces, depth=-1, maxdepth=None):
     text = node.text
     tail = node.tail
 
-    if tag is Comment or tag is ProcessingInstruction:
-        template = _SIMPLE[tag]
-        if cdata_needs_escaping(text):
-            write(template % _escape_cdata_noencoding(text))
-        else:
-            write(template % text)
-    elif tag is Replace:
-        if node.structure:
-            # this may produce invalid html
-            write(text)
-        else:
+    to_write = ""
+
+    if tag is Replace:
+        if not node.structure:
             if cdata_needs_escaping(text):
-                write(_escape_cdata_noencoding(text))
-            else:
-                write(text)
+                text = _escape_cdata_noencoding(text)
+        write(text)
+
+    elif tag is Comment:
+        if cdata_needs_escaping(text):
+            text = _escape_cdata_noencoding(text)
+        write('<!-- ' + text + ' -->')
+
+    elif tag is ProcessingInstruction:
+        if cdata_needs_escaping(text):
+            text = _escape_cdata_noencoding(text)
+        write('<!-- ' + text + ' -->')
+
     else:
-        if tag[:_XHTML_PREFIX_LEN] == _XHTML_PREFIX:
-            tag = tag[_XHTML_PREFIX_LEN:]
-        if node.attrib:
-            items = node.attrib.items()
-        else:
-            items = ()
         xmlns_items = [] # new namespaces in this scope
         try:
             if tag[:1] == "{":
-                tag, xmlns = fixtag(tag, namespaces)
-                if xmlns:
-                    xmlns_items.append(xmlns)
+                if tag[:_XHTML_PREFIX_LEN] == _XHTML_PREFIX:
+                    tag = tag[_XHTML_PREFIX_LEN:]
+                else:
+                    tag, xmlns = fixtag(tag, namespaces)
+                    if xmlns:
+                        xmlns_items.append(xmlns)
         except TypeError:
             _raise_serialization_error(tag)
-        write("<" + tag)
-        if items or xmlns_items:
-            items.sort() # lexical order
-            for k, v in items:
+
+        to_write += "<" + tag
+
+        attrib = node.attrib
+
+        if attrib is not None:
+            if len(attrib) > 1:
+                attrib_keys = sorted(attrib)
+            else:
+                attrib_keys = attrib
+            for k in attrib_keys:
                 try:
                     if k[:1] == "{":
                         continue
                 except TypeError:
                     _raise_serialization_error(k)
-                if _HTMLATTRS_BOOLEAN.has_key(k.lower()):
-                    write(' ' + k)
+                if k in _HTMLATTRS_BOOLEAN:
+                    to_write += ' ' + k
                 else:
-##                     if attrib_needs_escaping(v):
-##                         write(" %s=\"%s\"" % (k,
-##                                               _escape_attrib_noencoding(v)))
-##                     else:
-                    write(" %s=\"%s\"" % (k, v))
+                    v = attrib[k]
+                    to_write += " %s=\"%s\"" % (k, v)
                         
-            for k, v in xmlns_items:
-##                 if attrib_needs_escaping(v):
-##                     write(" %s=\"%s\"" % (k, _escape_attrib_noencoding(v)))
-##                 else:
-                write(" %s=\"%s\"" % (k, v))
-                    
-        if text or node._children:
-            write(">")
-            if text:
-                if _HTMLTAGS_NOESCAPE.has_key(tag):
-                    write(text)
-                else:
-                    if cdata_needs_escaping(text):
-                        write(_escape_cdata_noencoding(text))
-                    else:
-                        write(text)
-
-            for n in node._children:
-                if maxdepth is not None:
-                    depth = depth + 1
-                    if depth < maxdepth:
-                        _write_html_no_encoding(write, n, namespaces, depth,
-                                                maxdepth)
-                    elif depth == maxdepth:
-                        write(' [...]\n')
-                                 
-                else:
-                    _write_html_no_encoding(write, n, namespaces)
-            write("</" + tag + ">")
-        else:
-            tag = node.tag
-            if tag.startswith('{'):
-                ns_uri, local = tag[1:].split('}', 1)
-                if _namespace_map.get(ns_uri) == 'html':
-                    tag = local
-            if _HTMLTAGS_UNBALANCED.has_key(tag.lower()):
-                write('>')
-            else:
-                write('>')
-                write("</" + tag  + ">")
         for k, v in xmlns_items:
-            del namespaces[v]
+            to_write += " %s=\"%s\"" % (k, v)
+                    
+        to_write += ">"
+
+        if text is not None and text:
+            if tag in _HTMLTAGS_NOESCAPE:
+                to_write += text
+            elif cdata_needs_escaping(text):
+                to_write += _escape_cdata_noencoding(text)
+            else:
+                to_write += text
+
+        write(to_write)
+
+        for child in node._children:
+            _write_html_no_encoding(write, child, namespaces)
+
+        if text or node._children or tag not in _HTMLTAGS_UNBALANCED:
+            write("</" + tag  + ">")
+
     if tail:
         if cdata_needs_escaping(tail):
             write(_escape_cdata_noencoding(tail))
