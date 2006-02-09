@@ -1,5 +1,16 @@
 0.5
 
+  Added three methods to element nodes:
+
+    write_htmlstring
+    write_xmlstring
+    write_xhtmlstring
+
+  These methods have the same respective argument lists as their
+  "write_foo" cousins, except they don't accept a "file" argument.
+  Instead of writing to a file, they return a string containing the
+  renderering of the element.
+
   You can now use the meld3.py module to interactively try out
   different renderings.  To do this, invoke meld3.py with a filename
   and a dotted-python-path name to a mutator function that accepts a
@@ -8,10 +19,6 @@
     python meld3.py sample.html meld3.sample_mutator
 
   The rendering will be sent to stdout
-
-  Experimental C "helper" module for speed.  Disable via changing
-  "import cmeld3 as helper" in meld3.py to something like "import
-  wontbehere".
 
   Remove unused parse method.
 
@@ -36,6 +43,11 @@
       during write_html.
 
     - Ignore things that might be "QNames" during rendering.
+
+    - "getiterator", "content", "clone", and "findmeld" now
+      implemented in a C module.  Experimental.  Disable via changing
+      "import cmeld3 as helper" in meld3.py to something like "import
+      wontbehere".
 
   Fix text and attribute serialization to only quote ampersands that
   aren't already part of entities.
