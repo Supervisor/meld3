@@ -61,6 +61,27 @@ class PyHelper:
             self.clone(child, element)
         return element
 
+    def _bfclone(self, nodes, parent):
+        L = []
+        for node in nodes:
+            element = _MeldElementInterface(node.tag, node.attrib.copy())
+            element.text = node.text
+            element.tail = node.tail
+            element.structure = node.structure
+            element.parent = parent
+            L.append(element)
+            self._clone(node, element)
+        parent._children = L
+
+    def bfclone(self, node, parent=None):
+        element = _MeldElementInterface(node.tag, node.attrib.copy())
+        element.text = node.text
+        element.tail = node.tail
+        element.structure = node.structure
+        self._clone(node._children, element)
+        element.parent = parent
+        return element
+
     def getiterator(self, node, tag=None):
         nodes = []
         if tag == "*":

@@ -56,7 +56,7 @@ if __name__ == '__main__':
     import timeit
     t = timeit.Timer("run(root)", "from __main__ import run, root")
     repeat = 50
-    number = 20
+    number = 50
     result = t.repeat(repeat, number)
     best = min(result)
     print "%d loops " % repeat
