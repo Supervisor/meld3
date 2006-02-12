@@ -1,4 +1,5 @@
 import htmlentitydefs
+import os
 import re
 import types
 import mimetools
@@ -65,12 +66,13 @@ class PyHelper:
         L = []
         for node in nodes:
             element = _MeldElementInterface(node.tag, node.attrib.copy())
+            element.parent = parent
             element.text = node.text
             element.tail = node.tail
             element.structure = node.structure
-            element.parent = parent
+            if node._children:
+                self._bfclone(node._children, element)
             L.append(element)
-            self._clone(node, element)
         parent._children = L
 
     def bfclone(self, node, parent=None):
@@ -78,8 +80,11 @@ class PyHelper:
         element.text = node.text
         element.tail = node.tail
         element.structure = node.structure
-        self._clone(node._children, element)
         element.parent = parent
+        if parent is not None:
+            parent._children.append(element)
+        if node._children:
+            self._bfclone(node._children, element)
         return element
 
     def getiterator(self, node, tag=None):
@@ -107,7 +112,7 @@ try:
 except ImportError:
     chelper = None
 
-if chelper:
+if chelper and not os.getenv('MELD3_PYIMPL'):
     helper = chelper
 else:
     helper = pyhelper
@@ -300,7 +305,7 @@ class _MeldElementInterface:
             if first is True:
                 clone = element
             else:
-                clone = helper.clone(element, parent)
+                clone = helper.bfclone(element, parent)
             L.append((clone, thing))
             first = False
         return L
@@ -467,7 +472,7 @@ class _MeldElementInterface:
         """ Create a clone of an element.  If parent is not None,
         append the element to the parent.  Recurse as necessary to create
         a deep clone of the element. """
-        return helper.clone(self, parent)
+        return helper.bfclone(self, parent)
     
     def deparent(self):
         """ Remove ourselves from our parent node (de-parent) and return

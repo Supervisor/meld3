@@ -74,7 +74,7 @@ clone(PyObject *node, PyObject *parent)
     PyObject *pchildren;
     
     if (parent != Py_None) {
-        if (!(pchildren = PyObject_GetAttr(parent, PySTR_children))) return NULL;
+        if (!(pchildren=PyObject_GetAttr(parent, PySTR_children))) return NULL;
 	if (PyList_Append(pchildren, element)) return NULL;
 	if (PyObject_SetAttr(element, PySTRparent, parent)) return NULL;
     }
@@ -116,6 +116,210 @@ static char clonehandler_doc[] =
 \n\
 Return a clone of the meld3 node named by node.  If parent is not None, \n\
 append the clone to the parent.\n";
+
+static PyObject*
+bfclone(PyObject *nodes, PyObject *parent)
+{
+
+    PyObject *L;
+    if (!(L = PyList_New(0))) return NULL;
+
+    int len, i;
+
+    if (!(PyList_Check(nodes))) {
+	fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
+	fflush(stderr);
+	return NULL;
+    }
+
+    len = PyList_Size(nodes);
+
+    if (len < 0) {
+	fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
+	fflush(stderr);
+	return NULL;
+    }
+
+    for (i = 0; i < len; i++) {
+
+	PyObject *node;
+
+	if (!(node = PyList_GetItem(nodes, i))) {
+	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
+	    fflush(stderr);
+	    return NULL;
+	}
+
+	PyObject *klass;
+	PyObject *children;
+	PyObject *text;
+	PyObject *tail;
+	PyObject *tag;
+	PyObject *attrib;
+	PyObject *structure;
+	PyObject *dict;
+	PyObject *newdict;
+	PyObject *newchildren;
+	PyObject *attrib_copy;
+	PyObject *element;
+	int childsize;
+
+	if (!(klass = PyObject_GetAttr(node, PySTR__class__))) return NULL;
+	if (!(dict = PyObject_GetAttr(node, PySTR__dict__))) return NULL;
+
+	if (!(children = PyDict_GetItem(dict, PySTR_children))) return NULL;
+	if (!(tag = PyDict_GetItem(dict, PySTRtag))) return NULL;
+	if (!(attrib = PyDict_GetItem(dict, PySTRattrib))) return NULL;
+
+	if (!(text = PyDict_GetItem(dict, PySTRtext))) {
+	    text = Py_None;
+	}
+	if (!(tail = PyDict_GetItem(dict, PySTRtail))) {
+	    tail = Py_None;
+	}
+	if (!(structure = PyDict_GetItem(dict, PySTRstructure))) {
+	    structure = Py_None;
+	}
+
+	Py_INCREF(text);
+	Py_INCREF(tail);
+	Py_INCREF(tag);
+	Py_INCREF(structure);
+
+	if (!(newdict = PyDict_New())) return NULL;
+	if (!(newchildren = PyList_New(0))) return NULL;
+
+	attrib_copy = PyDict_Copy(attrib);
+
+	PyDict_SetItem(newdict, PySTR_children, newchildren);
+	PyDict_SetItem(newdict, PySTRattrib, attrib_copy);
+	PyDict_SetItem(newdict, PySTRtext, text);
+	PyDict_SetItem(newdict, PySTRtail, tail);
+	PyDict_SetItem(newdict, PySTRtag, tag);
+	PyDict_SetItem(newdict, PySTRstructure, structure);
+	PyDict_SetItem(newdict, PySTRparent, parent);
+    
+	if (!(element = PyInstance_NewRaw(klass, newdict))) {
+	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
+	    fflush(stderr);
+	    return NULL;
+	}
+
+	Py_DECREF(klass);
+	Py_DECREF(dict);
+ 
+	if (PyList_Append(L, element)) {
+	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
+	    fflush(stderr);
+	    return NULL;
+	}
+	if (!PyList_Check(children)) return NULL;
+
+	if ((childsize = PyList_Size(children)) < 0) {
+	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
+	    fflush(stderr);
+	    return NULL;
+	}
+	else {
+	    if (childsize > 0) {
+		bfclone(children, element);
+	    }
+	}
+    }
+
+    if (PyObject_SetAttr(parent, PySTR_children, L)) return NULL;
+    return parent;
+
+}
+
+static PyObject*
+bfclonehandler(PyObject *self, PyObject *args)
+{
+    PyObject *node, *parent;
+	
+    if (!PyArg_ParseTuple(args, "OO:clone", &node, &parent)) {
+	return NULL;
+    }
+    
+    PyObject *klass;
+    PyObject *children;
+    PyObject *text;
+    PyObject *tail;
+    PyObject *tag;
+    PyObject *attrib;
+    PyObject *structure;
+    PyObject *dict;
+    PyObject *newdict;
+    PyObject *newchildren;
+    PyObject *attrib_copy;
+    PyObject *element;
+    
+    if (!(klass = PyObject_GetAttr(node, PySTR__class__))) return NULL;
+    if (!(dict = PyObject_GetAttr(node, PySTR__dict__))) return NULL;
+    
+    if (!(children = PyDict_GetItem(dict, PySTR_children))) return NULL;
+    if (!(tag = PyDict_GetItem(dict, PySTRtag))) return NULL;
+    if (!(attrib = PyDict_GetItem(dict, PySTRattrib))) return NULL;
+    
+    if (!(text = PyDict_GetItem(dict, PySTRtext))) {
+	text = Py_None;
+    }
+    if (!(tail = PyDict_GetItem(dict, PySTRtail))) {
+	tail = Py_None;
+    }
+    if (!(structure = PyDict_GetItem(dict, PySTRstructure))) {
+	structure = Py_None;
+    }
+    
+    Py_INCREF(text);
+    Py_INCREF(tail);
+    Py_INCREF(tag);
+    Py_INCREF(structure);
+    
+    if (!(newdict = PyDict_New())) return NULL;
+    if (!(newchildren = PyList_New(0))) return NULL;
+    
+    attrib_copy = PyDict_Copy(attrib);
+    
+    PyDict_SetItem(newdict, PySTR_children, newchildren);
+    PyDict_SetItem(newdict, PySTRattrib, attrib_copy);
+    PyDict_SetItem(newdict, PySTRtext, text);
+    PyDict_SetItem(newdict, PySTRtail, tail);
+    PyDict_SetItem(newdict, PySTRtag, tag);
+    PyDict_SetItem(newdict, PySTRstructure, structure);
+    PyDict_SetItem(newdict, PySTRparent, parent);
+    
+    if (!(element = PyInstance_NewRaw(klass, newdict))) return NULL;
+    
+    Py_DECREF(klass);
+    Py_DECREF(dict);
+
+    PyObject *pchildren;
+    
+    if (parent != Py_None) {
+        if (!(pchildren=PyObject_GetAttr(parent, PySTR_children))) return NULL;
+	if (PyList_Append(pchildren, element)) return NULL;
+
+    }
+
+    if (!(PyList_Check(children))) return NULL;
+    
+    if (PyList_Size(children) > 0) {
+	if (bfclone(children, element) == NULL) {
+	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
+	    fflush(stderr);
+	    return NULL;
+	}
+    }
+    return element;
+    
+}
+
+static char bfclonehandler_doc[] =
+"bfclone(node, parent=None)\n			\
+\n\
+Return a clone of the meld3 node named by node (breadth-first).  If parent\n\
+is not None, append the clone to the parent.\n";
 
 static PyObject*
 getiterator(PyObject *node, PyObject *list) {
@@ -281,6 +485,7 @@ Add a content node to node.\n";
 
 static PyMethodDef methods[] = {
     {"clone", clonehandler, METH_VARARGS, clonehandler_doc},
+    {"bfclone", bfclonehandler, METH_VARARGS, bfclonehandler_doc},
     {"getiterator", getiteratorhandler, METH_VARARGS, getiteratorhandler_doc},
     {"findmeld", findmeldhandler, METH_VARARGS, findmeldhandler_doc},
     {"content", contenthandler, METH_VARARGS, contenthandler_doc},
