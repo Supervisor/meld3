@@ -647,7 +647,9 @@ class HTMLMeldParser(HTMLParser):
                         raise ValueError, ('Repeated meld id "%s" in source' %
                                            v)
                     self.meldids[v] = 1
-                attrib[k.lower()] = v
+                else:
+                    k = k.lower()
+                attrib[k] = v
         self.builder.start(tag, attrib)
         if tag in IGNOREEND:
             self.__stack.pop()
