@@ -1,5 +1,8 @@
 0.5
 
+  Fix obscure parsing bug that arose when attempting to change the
+  URI used as a "meld id" (do not lowercase).
+
   Added three methods to element nodes:
 
     write_htmlstring
