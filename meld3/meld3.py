@@ -1183,6 +1183,15 @@ def sample_mutator(root):
         tr.findmeld('td1').content(name)
         tr.findmeld('td2').content(desc)
 
+
+try:
+    # This gives roughly a 25% speed boost with pyhelper or
+    # roughly 30% with chelper ... but psyco is only for x86.
+    import psyco
+    psyco.bind(_write_html_no_encoding)
+except ImportError:
+    pass
+
 if __name__ == '__main__':
     # call interactively by invoking meld3.py with a filename and
     # a dotted-python-path name to a mutator function that accepts a single
