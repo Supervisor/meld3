@@ -1,5 +1,7 @@
 0.5
 
+  Add 'fillmeldhtmlform' method to nodes.
+
   Fix obscure parsing bug that arose when attempting to change the
   URI used as a "meld id" (do not lowercase).
 
