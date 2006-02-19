@@ -127,10 +127,189 @@ _NVU_HTML = """<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 </body>
 </html>"""
 
+_FILLMELDFORM_HTML = """\
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+ <title>Emergency Contacts</title>
+</head>
+<body>
+   <div class="header">Emergency Contacts</div>
+
+   <form action="." method="POST">
+    <table>
+
+      <tbody meld:id="tbody">
+	
+	<tr>
+	  <th>Title</th>
+	  <td>
+	    <input type="text" name="honorific" size="6" value=""
+		   meld:id="honorific"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>First Name</th>
+	  <td>
+	    <input type="text" name="firstname" size="20" value=""
+		   meld:id="firstname"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>Middle Name</th>
+	  <td>
+	    <input type="text" name="middlename" size="15" value=""
+		   meld:id="middlename"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>Last Name</th>
+	  <td>
+	    <input type="text" name="lastname" size="20" value=""
+		   meld:id="lastname"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  
+	  <th>Suffix</th>
+	  <td style="width: 554px;">
+          <select name="suffix" meld:id="suffix">
+	      <option value="Jr.">Jr.</option>
+	      <option value="Sr.">Sr.</option>
+	      <option value="III">III</option>
+	    </select>
+          </td>
+       
+        </tr>
+     
+	<tr>
+	  <th>Address 1</th>
+	  <td>
+	    <input type="text" name="address1" size="30" value=""
+		   meld:id="address1"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>Address 2</th>
+	  <td>
+	    <input type="text" name="address2" size="30" value=""
+		   meld:id="address2"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>City</th>
+	  <td>
+	    <input type="text" name="city" size="20" value=""
+		   meld:id="city"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>State</th>
+	  <td>
+	    <input type="text" name="state" size="5" value=""
+		   meld:id="state"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>ZIP</th>
+	  <td>
+	    <input type="text" name="zip" size="8" value=""
+		   meld:id="zip"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>Home Phone</th>
+	  <td>
+	    <input type="text" name="homephone" size="12" value=""
+		   meld:id="homephone"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>Cell/Mobile Phone</th>
+	  <td>
+	    <input type="text" name="cellphone" size="12" value=""
+		   meld:id="cellphone"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th>Email Address</th>
+	  <td>
+	    <input type="text" name="email" size="20" value=""
+		   meld:id="email"/>
+	  </td>
+	</tr>
+
+	<tr>
+	  <th>Over 18? (Checkbox Boolean)</th>
+	  <td>
+            <input type="checkbox" name="over18" meld:id="over18"
+                   value="true" checked="true"/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  
+	  <th>Mail OK? (Checkbox Ternary)</th>
+          <td style="width: 554px;" meld:id="mailok:inputgroup">
+            <input type="hidden" name="mailok:default"
+                   value="false"/>
+            <input type="checkbox" name="mailok"
+                   value="true" checked/>
+            <input type="checkbox" name="mailok"
+                   value="false"/>
+          </td>
+       
+        </tr>
+
+	<tr>
+	  
+	  <th>Favorite Color (Radio)</th>
+          <td style="width: 554px;" meld:id="favorite_color:inputgroup">
+            Red   <input type="radio" name="favorite_color"
+                         value="Red"/>
+            Green <input type="radio" name="favorite_color"
+                         value="Green"/>
+            Blue  <input type="radio" name="favorite_color"
+                         value="Blue"/>
+          </td>
+       
+        </tr>
+
+	<tr>
+	  <th></th>
+	  <td>
+	    <input type="submit" value=" Update " name="edit:method" />
+	  </td>
+	</tr>
+
+      </tbody>
+    </table>
+    </form>
+
+<p><a href="..">Return to list</a></p>
+</body>
+</html>
+"""
+
 class MeldAPITests(unittest.TestCase):
     def _makeElement(self, string):
         from meld3 import parse_xmlstring
         return parse_xmlstring(string)
+
+    def _makeElementFromHTML(self, string):
+        from meld3 import parse_htmlstring
+        return parse_htmlstring(string)
 
     def test_findmeld(self):
         root = self._makeElement(_SIMPLE_XML)
@@ -187,6 +366,61 @@ class MeldAPITests(unittest.TestCase):
         desc = root.findmeld('description')
         self.assertEqual(desc.text, 'foo')
         self.assertEqual(unfilled, ['jammyjam'])
+
+    def test_fillmeldhtmlform(self):
+        data = [
+            {'honorific':'Mr.', 'firstname':'Chris', 'middlename':'Phillips',
+             'lastname':'McDonough', 'address1':'802 Caroline St.',
+             'address2':'Apt. 2B', 'city':'Fredericksburg', 'state': 'VA',
+             'zip':'22401', 'homephone':'555-1212', 'cellphone':'555-1313',
+             'email':'chrism@plope.com', 'suffix':'Sr.', 'over18':True,
+             'mailok:inputgroup':'true', 'favorite_color:inputgroup':'Green'},
+            {'honorific':'Mr.', 'firstname':'Fred', 'middlename':'',
+             'lastname':'Rogers', 'address1':'1 Imaginary Lane',
+             'address2':'Apt. 3A', 'city':'Never Never Land', 'state': 'LA',
+             'zip':'00001', 'homephone':'555-1111', 'cellphone':'555-4444',
+             'email':'fred@neighborhood.com', 'suffix':'Jr.', 'over18':False,
+             'mailok:inputgroup':'false','favorite_color:inputgroup':'Yellow',},
+            {'firstname':'Fred', 'middlename':'',
+             'lastname':'Rogers', 'address1':'1 Imaginary Lane',
+             'address2':'Apt. 3A', 'city':'Never Never Land', 'state': 'LA',
+             'zip':'00001', 'homephone':'555-1111', 'cellphone':'555-4444',
+             'email':'fred@neighborhood.com', 'suffix':'IV', 'over18':False,
+             'mailok:inputgroup':'false', 'favorite_color:inputgroup':'Blue',
+             'notthere':1,},
+            ]
+        root = self._makeElementFromHTML(_FILLMELDFORM_HTML)
+
+        clone = root.clone()
+        unfilled = clone.fillmeldhtmlform(**data[0])
+        self.assertEqual(unfilled, [])
+        self.assertEqual(clone.findmeld('honorific').attrib['value'], 'Mr.')
+        self.assertEqual(clone.findmeld('firstname').attrib['value'], 'Chris')
+        middlename = clone.findmeld('middlename')
+        self.assertEqual(middlename.attrib['value'], 'Phillips')
+        suffix = clone.findmeld('suffix')
+        self.assertEqual(suffix[1].attrib['selected'], 'selected')
+        self.assertEqual(clone.findmeld('over18').attrib['checked'], 'checked')
+        mailok = clone.findmeld('mailok:inputgroup')
+        self.assertEqual(mailok[1].attrib['checked'], 'checked')
+        favoritecolor = clone.findmeld('favorite_color:inputgroup')
+        self.assertEqual(favoritecolor[1].attrib['checked'], 'checked')
+
+        clone = root.clone()
+        unfilled = clone.fillmeldhtmlform(**data[1])
+        self.assertEqual(unfilled, ['favorite_color:inputgroup'])
+        self.assertEqual(clone.findmeld('over18').attrib.get('checked'), None)
+        mailok = clone.findmeld('mailok:inputgroup')
+        self.assertEqual(mailok[2].attrib['checked'], 'checked')
+        self.assertEqual(mailok[1].attrib.get('checked'), None)
+        
+        clone = root.clone()
+        unfilled = clone.fillmeldhtmlform(**data[2])
+        self.assertEqual(unfilled, ['notthere', 'suffix'])
+        self.assertEqual(clone.findmeld('honorific').text, None)
+        favoritecolor = clone.findmeld('favorite_color:inputgroup')
+        self.assertEqual(favoritecolor[2].attrib['checked'], 'checked')
+        self.assertEqual(favoritecolor[1].attrib.get('checked'), None)
 
     def test_replace_removes_all_elements(self):
         from meld3 import Replace

@@ -257,6 +257,147 @@ class _MeldElementInterface:
                 node.text = kw[k]
         return unfilled
 
+    def fillmeldhtmlform(self, **kw):
+        """ Perform magic to 'fill in' HTML form element values from a
+        dictionary.  Unlike 'fillmelds', the type of element being
+        'filled' is taken into consideration.
+
+        Perform a 'findmeld' on each key in the dictionary and use the
+        value that corresponds to the key to perform mutation of the
+        tree, changing data in what is presumed to be one or more HTML
+        form elements according to the following rules::
+
+          If the found element is an 'input group' (its meld id ends
+          with the string ':inputgroup'), set the 'checked' attribute
+          on the appropriate subelement which has a 'value' attribute
+          which matches the dictionary value.  Also remove the
+          'checked' attribute from every other 'input' subelement of
+          the input group.  If no input subelement's value matches the
+          dictionary value, this key is treated as 'unfilled'.
+
+          If the found element is an 'input type=text', 'input
+          type=hidden', 'input type=submit', 'input type=password',
+          'input type=reset' or 'input type=file' element, replace its
+          'value' attribute with the value.
+
+          If the found element is an 'input type=checkbox' or 'input
+          type='radio' element, set its 'checked' attribute to true if
+          the dict value is true, or remove its 'checked' attribute if
+          the dict value is false.
+
+          If the found element is a 'select' element and the value
+          exists in the 'value=' attribute of one of its 'option'
+          subelements, change that option's 'selected' attribute to
+          true and mark all other option elements as unselected.  If
+          the select element does not contain an option with a value
+          that matches the dictionary value, do nothing and return
+          this key as unfilled.
+
+          If the found element is a 'textarea' or any other kind of
+          element, replace its text with the value.
+
+          If the element corresponding to the key is not found,
+          do nothing and treat the key as 'unfilled'.
+
+        Return a list of 'unfilled' keys, representing meld ids
+        present in the dictionary but not present in the element tree
+        or meld ids which could not be filled due to the lack of any
+        matching subelements for 'select' nodes or 'inputgroup' nodes.
+        """
+
+        unfilled = []
+
+        for k in kw:
+            node = self.findmeld(k)
+
+            if node is None:
+                unfilled.append(k)
+                continue
+
+            val = kw[k]
+
+            if k.endswith(':inputgroup'):
+                # an input group is a list of input type="checkbox" or
+                # input type="radio" elements that can be treated as a group
+                # because they attempt to specify the same value
+
+
+                found = []
+                unfound = []
+
+                for child in node.findall('input'):
+                    if child.attrib.get('type') not in ('checkbox', 'radio'):
+                        continue
+                    if child.attrib.get('value') == val:
+                        found.append(child)
+                    else:
+                        unfound.append(child)
+
+                if not found:
+                    unfilled.append(k)
+
+                else:
+                    for option in found:
+                        option.attrib['checked'] = 'checked'
+                    for option in unfound:
+                        try:
+                            del option.attrib['checked']
+                        except KeyError:
+                            pass
+            else:
+
+                tag = node.tag.lower()
+
+                if tag == 'input':
+
+                    input_type = node.attrib.get('type', 'text').lower()
+
+                    # fill in value attrib for most input types
+                    if input_type in ('hidden', 'submit', 'text',
+                                      'password', 'reset', 'file'):
+                        node.attrib['value'] = val
+
+                    # unless it's a checkbox or radio attribute, then we
+                    # fill in its checked attribute
+                    elif input_type in ('checkbox', 'radio'):
+                        if val:
+                            node.attrib['checked'] = 'checked'
+                        else:
+                            try:
+                                del node.attrib['checked']
+                            except KeyError:
+                                pass
+                    else:
+
+                        unfilled.append(k)
+
+                elif tag == 'select':
+                    # if the node is a select node, we want to select
+                    # the value matching val, otherwise it's unfilled
+
+                    found = []
+                    unfound = []
+
+                    for option in node.findall('option'):
+                        if option.attrib.get('value', '') == val:
+                            found.append(option)
+                        else:
+                            unfound.append(option)
+                    if not found:
+                        unfilled.append(k)
+                    else:
+                        for option in found:
+                            option.attrib['selected'] = 'selected'
+                        for option in unfound:
+                            try:
+                                del option.attrib['selected']
+                            except KeyError:
+                                pass
+                else:
+                    node.text = kw[k]
+                        
+        return unfilled
+
     def findmeld(self, name, default=None):
         """ Find a node in the tree that has a 'meld id' corresponding
         to 'name'. Iterate over all subnodes recursively looking for a
@@ -269,12 +410,25 @@ class _MeldElementInterface:
         return result
 
     def findmelds(self):
+        """ Find all nodes that have a meld id attribute and return
+        the found nodes in a list"""
+        return self.findwithattrib(_MELD_ID)
+
+    def findwithattrib(self, attrib, value=None):
+        """ Find all nodes that have an attribute named 'attrib'.  If
+        'value' is not None, omit nodes on which the attribute value
+        does not compare equally to 'value'. Return the found nodes in
+        a list."""
         iterator = helper.getiterator(self)
         elements = []
         for element in iterator:
-            val = element.attrib.get(_MELD_ID)
-            if val is not None:
-                elements.append(element)
+            attribval = element.attrib.get(_MELD_ID)
+            if attribval is not None:
+                if value is None:
+                    elements.append(element)
+                else:
+                    if value == attribval:
+                        elements.append(element)
         return elements
 
     # ZPT-alike methods
