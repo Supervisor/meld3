@@ -326,9 +326,13 @@ class _MeldElementInterface:
                 unfound = []
 
                 for child in node.findall('input'):
-                    if child.attrib.get('type') not in ('checkbox', 'radio'):
+                    input_type = child.attrib.get('type', '').lower()
+                    if input_type not in ('checkbox', 'radio'):
                         continue
-                    if child.attrib.get('value') == val:
+
+                    input_val = child.attrib.get('value', '')
+
+                    if val == input_val:
                         found.append(child)
                     else:
                         unfound.append(child)
@@ -422,7 +426,7 @@ class _MeldElementInterface:
         iterator = helper.getiterator(self)
         elements = []
         for element in iterator:
-            attribval = element.attrib.get(_MELD_ID)
+            attribval = element.attrib.get(attrib)
             if attribval is not None:
                 if value is None:
                     elements.append(element)
