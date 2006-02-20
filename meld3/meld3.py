@@ -116,14 +116,16 @@ if chelper and not os.getenv('MELD3_PYIMPL'):
     helper = chelper
 else:
     helper = pyhelper
-    
+
 _MELD_NS_URL  = 'http://www.plope.com/software/meld3'
 _MELD_PREFIX  = '{%s}' % _MELD_NS_URL
 _MELD_LOCAL   = 'id'
 _MELD_ID      = '%s%s' % (_MELD_PREFIX, _MELD_LOCAL)
+_MELD_SHORT_ID = 'meld:%s' % _MELD_LOCAL
 _XHTML_NS_URL = 'http://www.w3.org/1999/xhtml'
 _XHTML_PREFIX = '{%s}' % _XHTML_NS_URL
 _XHTML_PREFIX_LEN = len(_XHTML_PREFIX)
+
 
 _marker = []
 
@@ -730,6 +732,9 @@ class MeldParser(XMLTreeBuilder):
         self._target.end(Comment)
 
     def _start(self, tag, attrib_in):
+        # this is used by self._parser (an Expat parser) as
+        # StartElementHandler but only if _start_list is not
+        # provided... so why does this method exist?
         for key in attrib_in:
             if '{' + key == _MELD_ID:
                 meldid = attrib_in[key]
@@ -740,10 +745,14 @@ class MeldParser(XMLTreeBuilder):
         return XMLTreeBuilder._start(self, tag, attrib_in)
 
     def _start_list(self, tag, attrib_in):
-        i = 0
-        indexes = []
-        for attrib in attrib_in:
-            if '{' + attrib == _MELD_ID:
+        # This is used by self._parser (an Expat parser)
+        # as StartElementHandler.  attrib_in is a flat even-length
+        # sequence of name, value pairs for all attributes.
+        # See http://python.org/doc/lib/xmlparser-objects.html
+        for i in range(0, len(attrib_in), 2):
+            # For some reason, clark names are missing the leading '{'
+            attrib = self._fixname(attrib_in[i])
+            if _MELD_ID == attrib:
                 meldid = attrib_in[i+1]
                 if self.meldids.get(meldid):
                     raise ValueError, ('Repeated meld id "%s" in source' %
@@ -799,7 +808,7 @@ class HTMLMeldParser(HTMLParser):
         attrib = {}
         if attrs:
             for k, v in attrs:
-                if k == 'meld:id':
+                if k == _MELD_SHORT_ID:
                     k = _MELD_ID
                     if self.meldids.get(v):
                         raise ValueError, ('Repeated meld id "%s" in source' %
@@ -1125,7 +1134,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
         if node.attrib:
             items = node.attrib.items()
         else:
-            items = ()
+            items = []  # must always be sortable.
         xmlns_items = [] # new namespaces in this scope
         try:
             if tag[:1] == "{":
@@ -1372,6 +1381,4 @@ if __name__ == '__main__':
         mutator(root)
     root.write_html(io)
     sys.stdout.write(io.getvalue())
-    
-    
-    
+

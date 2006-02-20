@@ -477,13 +477,14 @@ class MeldAPITests(unittest.TestCase):
         self.assertEqual(T.structure, False)
 
     def test_attributes(self):
+        from meld3 import _MELD_ID
         root = self._makeElement(_COMPLEX_XHTML)
         D = root.findmeld('form1')
         D.attributes(foo='bar', baz='1', g='2', action='#')
         self.assertEqual(D.attrib, {
             'foo':'bar', 'baz':'1', 'g':'2',
             'method':'POST', 'action':'#',
-            '{http://www.plope.com/software/meld3}id': 'form1'})
+            _MELD_ID: 'form1'})
 
     def test_attributes_nonstringtype_raises(self):
         root = self._makeElement('<root></root>')
