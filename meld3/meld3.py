@@ -20,6 +20,11 @@ from elementtree.HTMLTreeBuilder import IGNOREEND
 from elementtree.HTMLTreeBuilder import AUTOCLOSE
 from elementtree.HTMLTreeBuilder import is_not_ascii
 
+try:
+    import psyco
+except ImportError:
+    psyco = None
+
 # replace element factory
 def Replace(text, structure=False):
     element = _MeldElementInterface(Replace, {})
@@ -1111,7 +1116,12 @@ def _write_html_no_encoding(write, node, namespaces):
             write(_escape_cdata_noencoding(tail))
         else:
             write(tail)
-        
+
+if psyco and not os.getenv('MELD3_NOPSYCO'):
+    # This gives roughly a 25% speed boost with pyhelper or
+    # roughly 30% with chelper ... but psyco is only for x86.
+    psyco.bind(_write_html_no_encoding)
+
 def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
     """ Write XML to a file """
     if encoding is None:
@@ -1351,13 +1361,6 @@ def sample_mutator(root):
         tr.findmeld('td2').content(desc)
 
 
-try:
-    # This gives roughly a 25% speed boost with pyhelper or
-    # roughly 30% with chelper ... but psyco is only for x86.
-    import psyco
-    psyco.bind(_write_html_no_encoding)
-except ImportError:
-    pass
 
 if __name__ == '__main__':
     # call interactively by invoking meld3.py with a filename and
