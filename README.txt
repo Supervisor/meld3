@@ -497,6 +497,23 @@ Reporting Bugs and Requesting Features
   Please visit http://www.plope.com/software/collector to report bugs
   and request features.
 
+Environment Variables
+
+  MELD3_PYIMPL
+
+     If set to a non-null value, disables the C extension module which is used
+     to speed things up somewhat.
+
+  MELD3_NOPSYCO
+
+     If set to a non-null value, disables psyco (http://psyco.sf.net) which,
+     if installed, speeds up rendering on x86 systems.
+
+Debugging
+
+  psyco can prevent pdb from working.
+  Set the MELD3_NOPSYCO environment variable to avoid this.
+
 Have fun!
 
 - Chris McDonough (chrism@plope.com)
