@@ -21,13 +21,6 @@ from elementtree.HTMLTreeBuilder import AUTOCLOSE
 from elementtree.HTMLTreeBuilder import is_not_ascii
 
 
-psyco = None
-if not os.getenv('MELD3_NOPSYCO'):
-    try:
-        import psyco
-    except ImportError:
-        pass
-
 # replace element factory
 def Replace(text, structure=False):
     element = _MeldElementInterface(Replace, {})
@@ -1119,11 +1112,6 @@ def _write_html_no_encoding(write, node, namespaces):
             write(_escape_cdata_noencoding(tail))
         else:
             write(tail)
-
-if psyco is not None:
-    # This gives roughly a 25% speed boost with pyhelper or
-    # roughly 30% with chelper ... but psyco is only for x86.
-    psyco.bind(_write_html_no_encoding)
 
 def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
     """ Write XML to a file """
