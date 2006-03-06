@@ -1,5 +1,8 @@
 #include <Python.h>
 
+/* fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
+   fflush(stderr); */
+
 static PyObject *PySTR__class__, *PySTR__dict__, *PySTR_children;
 static PyObject *PySTRattrib, *PySTRparent, *PySTR_MELD_ID;
 static PyObject *PySTRtag, *PySTRtext, *PySTRtail, *PySTRstructure;
@@ -127,16 +130,12 @@ bfclone(PyObject *nodes, PyObject *parent)
     int len, i;
 
     if (!(PyList_Check(nodes))) {
-	fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
-	fflush(stderr);
 	return NULL;
     }
 
     len = PyList_Size(nodes);
 
     if (len < 0) {
-	fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
-	fflush(stderr);
 	return NULL;
     }
 
@@ -145,8 +144,6 @@ bfclone(PyObject *nodes, PyObject *parent)
 	PyObject *node;
 
 	if (!(node = PyList_GetItem(nodes, i))) {
-	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
-	    fflush(stderr);
 	    return NULL;
 	}
 
@@ -200,8 +197,6 @@ bfclone(PyObject *nodes, PyObject *parent)
 	PyDict_SetItem(newdict, PySTRparent, parent);
     
 	if (!(element = PyInstance_NewRaw(klass, newdict))) {
-	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
-	    fflush(stderr);
 	    return NULL;
 	}
 
@@ -209,15 +204,11 @@ bfclone(PyObject *nodes, PyObject *parent)
 	Py_DECREF(dict);
  
 	if (PyList_Append(L, element)) {
-	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
-	    fflush(stderr);
 	    return NULL;
 	}
 	if (!PyList_Check(children)) return NULL;
 
 	if ((childsize = PyList_Size(children)) < 0) {
-	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
-	    fflush(stderr);
 	    return NULL;
 	}
 	else {
@@ -306,8 +297,6 @@ bfclonehandler(PyObject *self, PyObject *args)
     
     if (PyList_Size(children) > 0) {
 	if (bfclone(children, element) == NULL) {
-	    fprintf(stderr, "%s:%s:%d\n", __FILE__,__FUNCTION__,__LINE__);
-	    fflush(stderr);
 	    return NULL;
 	}
     }
