@@ -504,16 +504,6 @@ Environment Variables
      If set to a non-null value, disables the C extension module which is used
      to speed things up somewhat.
 
-  MELD3_NOPSYCO
-
-     If set to a non-null value, disables psyco (http://psyco.sf.net) which,
-     if installed, speeds up rendering on x86 systems.
-
-Debugging
-
-  psyco can prevent pdb from working.
-  Set the MELD3_NOPSYCO environment variable to avoid this.
-
 Have fun!
 
 - Chris McDonough (chrism@plope.com)
