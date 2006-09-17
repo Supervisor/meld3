@@ -440,30 +440,28 @@ contenthandler(PyObject *self, PyObject *args) {
     Py_INCREF(Py_None);
 
     if (!(newdict = PyDict_New())) return NULL;
-    PyDict_SetItem(newdict, PySTRparent, node);
+
+    if (PyDict_SetItem(newdict, PySTRparent, node) == -1) return NULL;
     Py_INCREF(node);
-    
     if (PyDict_SetItem(newdict, PySTRattrib, emptyattrs) == -1) return NULL;
     Py_INCREF(emptyattrs);
     if (PyDict_SetItem(newdict, PySTRtext, text) == -1) return NULL;
     Py_INCREF(text);
     if (PyDict_SetItem(newdict, PySTRstructure, structure) == -1) return NULL;
     Py_INCREF(structure);
+    if (PyDict_SetItem(newdict, PySTRtag, replace) == -1) return NULL;
+    Py_INCREF(replace);
     if (PyDict_SetItem(newdict, PySTR_children, emptychildren) == -1) {
 	return NULL;
     }
     Py_INCREF(emptychildren);
-    if (PyDict_SetItem(newdict, PySTRtag, replace) == -1) return NULL;
-    Py_INCREF(replace);
-
     if (!(replacenode = PyInstance_NewRaw(klass, newdict))) return NULL;
 
     if (!(newchildren = PyList_New(1))) return NULL;
     PyList_SET_ITEM(newchildren, 0, replacenode);
     Py_INCREF(replacenode);
     PyObject_SetAttr(node, PySTR_children, newchildren);
-
-    return replacenode;
+    return Py_None;
     
 }
 
@@ -502,7 +500,7 @@ initcmeld3(void)
 	return;
     }
     emptyattrs = PyDict_New();
-    emptyattrs = PyDictProxy_New(emptyattrs);
+/*     emptyattrs = PyDictProxy_New(emptyattrs); can't copy a proxy, so... */
     emptychildren = PyList_New(0);
     Py_InitModule3("cmeld3", methods,
 		   "C helpers for meld3");
