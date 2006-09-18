@@ -1,3 +1,8 @@
+0.6
+
+  Fixed crashbug when repeating trees with "structure" nodes in them.
+  Symptom: bus error.
+
 0.5
 
   Add 'fillmeldhtmlform' method to nodes.
