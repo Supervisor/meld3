@@ -1,7 +1,7 @@
 0.6
 
   Fixed crashbug when repeating trees with "structure" nodes in them.
-  Symptom: bus error.
+  Symptom: bus error.  Thanks to Terrence Brannon for the report.
 
 0.5
 
