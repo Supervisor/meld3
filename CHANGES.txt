@@ -1,3 +1,11 @@
+0.6.1
+
+  Allow people to install meld3 without building extension modules.
+  If the environment variable "NO_MELD3_EXTENSION_MODULES" is set, the
+  meld3 setup.py file will not build any extension modules.  meld3
+  will still work, only more slowly than if the extension modules
+  existed.
+
 0.6
 
   Fixed crashbug when repeating trees with "structure" nodes in them.
