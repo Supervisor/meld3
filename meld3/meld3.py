@@ -51,6 +51,8 @@ class PyHelper:
         return default
 
     def clone(self, node, parent=None):
+        # NOTE: this is not implemented by the C version (it used to be
+        # but I don't want to maintain it)
         element = _MeldElementInterface(node.tag, node.attrib.copy())
         element.text = node.text
         element.tail = node.tail
@@ -196,7 +198,9 @@ class _MeldElementInterface:
     def items(self):
         return self.attrib.items()
 
-    def getiterator(self, tag=None):
+    def getiterator(self, *ignored_args, **ignored_kw):
+        # we ignore any tag= passed in to us, because it's too painful
+        # to support in our C version
         return helper.getiterator(self)
 
     # overrides to support parent pointers and factories

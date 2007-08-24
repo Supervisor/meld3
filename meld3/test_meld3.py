@@ -499,11 +499,96 @@ class MeldElementInterfaceTests(unittest.TestCase):
         klass = self._getTargetClass()
         return klass(*arg, **kw)
 
+    def test_content_simple_nostructure(self):
+        el = self._makeOne('div', {'id':'thediv'})
+        el.content('hello')
+        self.assertEqual(len(el._children), 1)
+        replacenode = el._children[0]
+        self.assertEqual(replacenode.parent, el)
+        self.assertEqual(replacenode.text, 'hello')
+        self.assertEqual(replacenode.structure, False)
+        from meld3 import Replace
+        self.assertEqual(replacenode.tag, Replace)
+
+    def test_content_simple_structure(self):
+        el = self._makeOne('div', {'id':'thediv'})
+        el.content('hello', structure=True)
+        self.assertEqual(len(el._children), 1)
+        replacenode = el._children[0]
+        self.assertEqual(replacenode.parent, el)
+        self.assertEqual(replacenode.text, 'hello')
+        self.assertEqual(replacenode.structure, True)
+        from meld3 import Replace
+        self.assertEqual(replacenode.tag, Replace)
+
+    def test_findmeld_simple(self):
+        from meld3 import _MELD_ID
+        el = self._makeOne('div', {_MELD_ID:'thediv'})
+        self.assertEqual(el.findmeld('thediv'), el)
+
+    def test_findmeld_simple_oneleveldown(self):
+        from meld3 import _MELD_ID
+        el = self._makeOne('div', {_MELD_ID:'thediv'})
+        span = self._makeOne('span', {_MELD_ID:'thespan'})
+        el.append(span)
+        self.assertEqual(el.findmeld('thespan'), span)
+
+    def test_findmeld_simple_twolevelsdown(self):
+        from meld3 import _MELD_ID
+        el = self._makeOne('div', {_MELD_ID:'thediv'})
+        span = self._makeOne('span', {_MELD_ID:'thespan'})
+        a = self._makeOne('a', {_MELD_ID:'thea'})
+        span.append(a)
+        el.append(span)
+        self.assertEqual(el.findmeld('thea'), a)
+
     def test_ctor(self):
         iface = self._makeOne('div', {'id':'thediv'})
         self.assertEqual(iface.parent, None)
         self.assertEqual(iface.tag, 'div')
         self.assertEqual(iface.attrib, {'id':'thediv'})
+
+    def test_getiterator_simple(self):
+        div = self._makeOne('div', {'id':'thediv'})
+        iterator = div.getiterator()
+        self.assertEqual(len(iterator), 1)
+        self.assertEqual(iterator[0], div)
+
+    def test_getiterator(self):
+        div = self._makeOne('div', {'id':'thediv'})
+        span = self._makeOne('span', {})
+        span2 = self._makeOne('span', {'id':'2'})
+        span3 = self._makeOne('span3', {'id':'3'})
+        span3.text = 'abc'
+        span3.tail = '  '
+        div.append(span)
+        span.append(span2)
+        span2.append(span3)
+
+        it = div.getiterator()
+        self.assertEqual(len(it), 4)
+        self.assertEqual(it[0], div)
+        self.assertEqual(it[1], span)
+        self.assertEqual(it[2], span2)
+        self.assertEqual(it[3], span3)
+
+    def test_getiterator_tag_ignored(self):
+        div = self._makeOne('div', {'id':'thediv'})
+        span = self._makeOne('span', {})
+        span2 = self._makeOne('span', {'id':'2'})
+        span3 = self._makeOne('span3', {'id':'3'})
+        span3.text = 'abc'
+        span3.tail = '  '
+        div.append(span)
+        span.append(span2)
+        span2.append(span3)
+        
+        it = div.getiterator(tag='div')
+        self.assertEqual(len(it), 4)
+        self.assertEqual(it[0], div)
+        self.assertEqual(it[1], span)
+        self.assertEqual(it[2], span2)
+        self.assertEqual(it[3], span3)
 
     def test_append(self):
         div = self._makeOne('div', {'id':'thediv'})
@@ -534,6 +619,14 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(div[1].tag, 'span')
         self.assertEqual(div[1].attrib, {})
         self.assertEqual(div[1].parent, div)
+
+    def test_clone_simple(self):
+        div = self._makeOne('div', {'id':'thediv'})
+        div.text = 'abc'
+        div.tail = '   '
+        span = self._makeOne('span', {})
+        div.append(span)
+        div2 = div.clone()
 
     def test_clone(self):
         div = self._makeOne('div', {'id':'thediv'})
