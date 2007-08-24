@@ -1,3 +1,9 @@
+0.6.2
+
+  Fixed a number of memory leaks in the C implementation of the helper
+  module.  Any use of "findmeld", "clone", "getiterator", or "content"
+  previously leaked references.
+
 0.6.1
 
   Allow people to install meld3 without building extension modules.
