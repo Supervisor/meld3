@@ -178,7 +178,7 @@ bfclonehandler(PyObject *self, PyObject *args)
     if (parent != Py_None) {
         if (!(pchildren=PyObject_GetAttr(parent, PySTR_children))) return NULL;
 	if (PyList_Append(pchildren, element)) return NULL;
-
+        Py_DECREF(pchildren);
     }
 
     if (!(PyList_Check(children))) return NULL;
@@ -297,6 +297,10 @@ findmeldhandler(PyObject *self, PyObject *args)
 	return NULL;
     }
     if (!(result = findmeld(node, name))) return NULL;
+
+    if (result == Py_None) {
+        Py_INCREF(Py_None);
+    }
 
     return result;
 }

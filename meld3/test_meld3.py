@@ -499,6 +499,45 @@ class MeldElementInterfaceTests(unittest.TestCase):
         klass = self._getTargetClass()
         return klass(*arg, **kw)
 
+    def test_repeat(self):
+        root = self._makeOne('root', {})
+        from meld3 import _MELD_ID
+        item = self._makeOne('item', {_MELD_ID:'item'})
+        record = self._makeOne('record', {_MELD_ID:'record'})
+        name = self._makeOne('name', {_MELD_ID:'name'})
+        description = self._makeOne('description', {_MELD_ID:'description'})
+        record.append(name)
+        record.append(description)
+        item.append(record)
+        root.append(item)
+
+        data = [{'name':'Jeff Buckley', 'description':'ethereal'},
+                {'name':'Slipknot', 'description':'heavy'}]
+
+        for element, d in item.repeat(data):
+            element.findmeld('name').text = d['name']
+            element.findmeld('description').text = d['description']
+        self.assertEqual(len(root), 2)
+        item1 = root[0]
+        self.assertEqual(len(item1), 1)
+
+        record1 = item1[0]
+        self.assertEqual(len(record1), 2)
+
+        name1 = record1[0]
+        desc1 = record1[1]
+        self.assertEqual(name1.text, 'Jeff Buckley')
+        self.assertEqual(desc1.text, 'ethereal')
+
+        item2 = root[1]
+        self.assertEqual(len(item2), 1)
+        record2 = item2[0]
+        self.assertEqual(len(record2), 2)
+        name2 = record2[0]
+        desc2 = record2[1]
+        self.assertEqual(name2.text, 'Slipknot')
+        self.assertEqual(desc2.text, 'heavy')
+
     def test_content_simple_nostructure(self):
         el = self._makeOne('div', {'id':'thediv'})
         el.content('hello')

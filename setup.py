@@ -10,7 +10,7 @@ else:
                            ["meld3/cmeld3.c"])]
 setup(
     name = 'meld3',
-    version = '0.6.2',
+    version = '0.6.3',
     description = 'meld3 is an HTML/XML templating engine.',
     author = 'Chris McDonough',
     author_email =  'chrism@plope.com',

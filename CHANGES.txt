@@ -1,3 +1,8 @@
+0.6.3
+
+  Fixed two more memory leaks (one in bfclonehandler, the other in
+  findmeldhandler) in the c helper module.
+
 0.6.2
 
   Fixed a number of memory leaks in the C implementation of the helper
