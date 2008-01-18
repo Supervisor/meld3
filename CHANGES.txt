@@ -1,3 +1,19 @@
+0.6.4
+
+  Make the default build use the Python-based meld "helper" instead of
+  the C-based one.  Since the primary consumer of meld3 (as far as I
+  know) is "supervisor", and since the typical supervisor consumer is
+  likely not to have a C compiler and Python development libraries on
+  his system, it makes more sense for the default build not to compile
+  the C extensions.  However, if the environment variable
+  "USE_MELD3_EXTENSION_MODULES" is set when "setup.py install" is
+  invoked, the C extensions will be built.  meld3 is much slower
+  without the C extensions, so using "USE_MELD3_EXTENSION_MODULES" is
+  usually a good idea for performance-sensitive systems.
+
+  As a result of this change, the "NO_MELD3_EXTENSION_MODULES"
+  environment variable introduced in 0.6.1 now has no effect.
+
 0.6.3
 
   Fixed two more memory leaks (one in bfclonehandler, the other in
