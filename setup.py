@@ -12,7 +12,7 @@ else:
 
 setup(
     name = 'meld3',
-    version = '0.6.4',
+    version = '0.6.5',
     description = 'meld3 is an HTML/XML templating engine.',
     author = 'Chris McDonough',
     author_email =  'chrism@plope.com',

@@ -5,21 +5,34 @@ import types
 import mimetools
 from StringIO import StringIO
 
-from elementtree.ElementTree import TreeBuilder
-from elementtree.ElementTree import XMLTreeBuilder
-from elementtree.ElementTree import Comment
-from elementtree.ElementTree import ProcessingInstruction
-from elementtree.ElementTree import QName
-from elementtree.ElementTree import _raise_serialization_error
-from elementtree.ElementTree import _namespace_map
-from elementtree.ElementTree import fixtag
-from elementtree.ElementTree import parse as et_parse
-from elementtree.ElementTree import ElementPath
-from elementtree.HTMLTreeBuilder import HTMLParser
-from elementtree.HTMLTreeBuilder import IGNOREEND
-from elementtree.HTMLTreeBuilder import AUTOCLOSE
-from elementtree.HTMLTreeBuilder import is_not_ascii
+try:
+    from elementtree.ElementTree import TreeBuilder
+    from elementtree.ElementTree import XMLTreeBuilder
+    from elementtree.ElementTree import Comment
+    from elementtree.ElementTree import ProcessingInstruction
+    from elementtree.ElementTree import QName
+    from elementtree.ElementTree import _raise_serialization_error
+    from elementtree.ElementTree import _namespace_map
+    from elementtree.ElementTree import fixtag
+    from elementtree.ElementTree import parse as et_parse
+    from elementtree.ElementTree import ElementPath
+except ImportError:
+    from xml.etree.ElementTree import TreeBuilder
+    from xml.etree.ElementTree import XMLTreeBuilder
+    from xml.etree.ElementTree import Comment
+    from xml.etree.ElementTree import ProcessingInstruction
+    from xml.etree.ElementTree import QName
+    from xml.etree.ElementTree import _raise_serialization_error
+    from xml.etree.ElementTree import _namespace_map
+    from xml.etree.ElementTree import fixtag
+    from xml.etree.ElementTree import parse as et_parse
+    from xml.etree.ElementTree import ElementPath
 
+# HTMLTreeBuilder does not exist in python 2.5 standard elementtree
+from HTMLParser import HTMLParser
+AUTOCLOSE = "p", "li", "tr", "th", "td", "head", "body"
+IGNOREEND = "img", "hr", "meta", "link", "br"
+is_not_ascii = re.compile(eval(r'u"[\u0080-\uffff]"')).search
 
 # replace element factory
 def Replace(text, structure=False):
