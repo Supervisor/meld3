@@ -9,6 +9,7 @@
    USE_MELD3_EXTENSION_MODULES=1 python setup.py sdist
 
   .. in order to get the cmeld3.c file in the distribution.
+
 0.6.4
 
   Make the default build use the Python-based meld "helper" instead of
