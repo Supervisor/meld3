@@ -1,3 +1,8 @@
+0.6.6
+
+  Change download location.  This really should be a setuptools
+  package so we can upload it to PyPI.  No functionality changes.
+
 0.6.5
 
   Apply patch for Python 2.5 compatibility from both
