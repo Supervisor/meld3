@@ -3,6 +3,7 @@ import os
 import re
 import types
 import mimetools
+import string
 from StringIO import StringIO
 
 try:
@@ -24,9 +25,33 @@ except ImportError:
     from xml.etree.ElementTree import QName
     from xml.etree.ElementTree import _raise_serialization_error
     from xml.etree.ElementTree import _namespace_map
-    from xml.etree.ElementTree import fixtag
     from xml.etree.ElementTree import parse as et_parse
     from xml.etree.ElementTree import ElementPath
+
+    try:
+        from xml.etree.ElementTree import fixtag
+    except:
+        def fixtag(tag, namespaces):
+            # given a decorated tag (of the form {uri}tag), return prefixed
+            # tag and namespace declaration, if any
+            if isinstance(tag, QName):
+                tag = tag.text
+            namespace_uri, tag = string.split(tag[1:], "}", 1)
+            prefix = namespaces.get(namespace_uri)
+            if prefix is None:
+                prefix = _namespace_map.get(namespace_uri)
+                if prefix is None:
+                    prefix = "ns%d" % len(namespaces)
+                namespaces[namespace_uri] = prefix
+                if prefix == "xml":
+                    xmlns = None
+                else:
+                    xmlns = ("xmlns:%s" % prefix, namespace_uri)
+            else:
+                xmlns = None
+            return "%s:%s" % (prefix, tag), xmlns
+        
+
 
 # HTMLTreeBuilder does not exist in python 2.5 standard elementtree
 from HTMLParser import HTMLParser

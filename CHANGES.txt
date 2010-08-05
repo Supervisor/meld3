@@ -1,3 +1,8 @@
+0.6.7 (2010-08-04)
+
+  Make compatible with Python 2.7 (patch kindly contributed by
+  Jonathan Riboux).
+
 0.6.6
 
   Change download location.  This really should be a setuptools

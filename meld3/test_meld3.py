@@ -1,6 +1,7 @@
 import unittest
 from StringIO import StringIO
 import re
+import sys
 
 _SIMPLE_XML = r"""<?xml version="1.0"?>
 <root xmlns:meld="http://www.plope.com/software/meld3">
@@ -1671,9 +1672,13 @@ class WriterTests(unittest.TestCase):
 </html>"""
 
     def test_unknown_entity(self):
-        from xml.parsers import expat
-        self.assertRaises(expat.error, self._parse,
-                          '<html><head></head><body>&fleeb;</body></html>')
+        if sys.version_info[:3] >= (2,7,0):
+            self.assertRaises(SyntaxError, self._parse,
+                              '<html><head></head><body>&fleeb;</body></html>')
+        else:
+            from xml.parsers import expat
+            self.assertRaises(expat.error, self._parse,
+                              '<html><head></head><body>&fleeb;</body></html>')
 
     def test_content_nostructure(self):
         root = self._parse(_SIMPLE_XML)

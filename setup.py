@@ -12,12 +12,12 @@ else:
 
 setup(
     name = 'meld3',
-    version = '0.6.6',
+    version = '0.6.7',
     description = 'meld3 is an HTML/XML templating engine.',
     author = 'Chris McDonough',
     author_email =  'chrism@plope.com',
-    license='see LICENSE.txt',
+    license='ZPL 2.1',
     packages=['meld3'],
-    url='http://dist.repoze.org/meld3/',
+    url='http://svn.supervisord.org/meld3/     ',
     ext_modules=ext_modules,
 )
