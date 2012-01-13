@@ -1,3 +1,12 @@
+0.6.8 (2012-01-12)
+
+  Added the C extension source (cmeld3.c) to the release package
+  by including it in MANIFEST.in.  Thanks to Soren Hansen for
+  noticing it was missing from prior releases.
+
+  Running setup.py will now halt on error if a compatible version
+  of Python is not detected.
+
 0.6.7 (2010-08-04)
 
   Make compatible with Python 2.7 (patch kindly contributed by
