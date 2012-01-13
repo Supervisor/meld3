@@ -1,0 +1,17 @@
+*~
+*.egg
+*.egg-info
+*.pyc
+*.pyo
+*.swp
+.DS_Store
+.coverage
+build/
+docs/.build/
+dist/
+.tox/
+MANIFEST
+meld3/coverage.xml
+nosetests.xml
+tmp/
+
