@@ -17,10 +17,20 @@ else:
     # extension modules (meld works fine without them, it's just slower).
     ext_modules = []
 
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Environment :: Web Environment',
+    'Intended Audience :: Developers',
+    'Operating System :: POSIX',
+    'Programming Language :: Python :: 2 :: Only',
+    'Topic :: Text Processing :: Markup :: HTML'
+    ]
+
 setup(
     name = 'meld3',
     version = '0.6.8',
     description = 'meld3 is an HTML/XML templating engine.',
+    classifiers = CLASSIFIERS,
     author = 'Chris McDonough',
     author_email = 'chrism@plope.com',
     maintainer = "Mike Naberezny",
