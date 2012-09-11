@@ -141,7 +141,7 @@ _FILLMELDFORM_HTML = """\
     <table>
 
       <tbody meld:id="tbody">
-	
+
 	<tr>
 	  <th>Title</th>
 	  <td>
@@ -149,7 +149,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="honorific"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>First Name</th>
 	  <td>
@@ -157,7 +157,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="firstname"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>Middle Name</th>
 	  <td>
@@ -165,7 +165,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="middlename"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>Last Name</th>
 	  <td>
@@ -173,9 +173,9 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="lastname"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
-	  
+
 	  <th>Suffix</th>
 	  <td style="width: 554px;">
           <select name="suffix" meld:id="suffix">
@@ -184,9 +184,9 @@ _FILLMELDFORM_HTML = """\
 	      <option value="III">III</option>
 	    </select>
           </td>
-       
+
         </tr>
-     
+
 	<tr>
 	  <th>Address 1</th>
 	  <td>
@@ -194,7 +194,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="address1"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>Address 2</th>
 	  <td>
@@ -202,7 +202,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="address2"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>City</th>
 	  <td>
@@ -210,7 +210,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="city"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>State</th>
 	  <td>
@@ -218,7 +218,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="state"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>ZIP</th>
 	  <td>
@@ -226,7 +226,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="zip"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>Home Phone</th>
 	  <td>
@@ -234,7 +234,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="homephone"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>Cell/Mobile Phone</th>
 	  <td>
@@ -242,7 +242,7 @@ _FILLMELDFORM_HTML = """\
 		   meld:id="cellphone"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
 	  <th>Email Address</th>
 	  <td>
@@ -258,9 +258,9 @@ _FILLMELDFORM_HTML = """\
                    value="true" checked="true"/>
 	  </td>
 	</tr>
-	
+
 	<tr>
-	  
+
 	  <th>Mail OK? (Checkbox Ternary)</th>
           <td style="width: 554px;" meld:id="mailok:inputgroup">
             <input type="hidden" name="mailok:default"
@@ -270,11 +270,11 @@ _FILLMELDFORM_HTML = """\
             <input type="checkbox" name="mailok"
                    value="false"/>
           </td>
-       
+
         </tr>
 
 	<tr>
-	  
+
 	  <th>Favorite Color (Radio)</th>
           <td style="width: 554px;" meld:id="favorite_color:inputgroup">
             Red   <input type="radio" name="favorite_color"
@@ -284,7 +284,7 @@ _FILLMELDFORM_HTML = """\
             Blue  <input type="radio" name="favorite_color"
                          value="Blue"/>
           </td>
-       
+
         </tr>
 
 	<tr>
@@ -414,7 +414,7 @@ class MeldAPITests(unittest.TestCase):
         mailok = clone.findmeld('mailok:inputgroup')
         self.assertEqual(mailok[2].attrib['checked'], 'checked')
         self.assertEqual(mailok[1].attrib.get('checked'), None)
-        
+
         clone = root.clone()
         unfilled = clone.fillmeldhtmlform(**data[2])
         self.assertEqual(unfilled, ['notthere', 'suffix'])
@@ -622,7 +622,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
         div.append(span)
         span.append(span2)
         span2.append(span3)
-        
+
         it = div.getiterator(tag='div')
         self.assertEqual(len(it), 4)
         self.assertEqual(it[0], div)
@@ -695,13 +695,13 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.failIfEqual(id(div[0]), id(div2[0]))
         self.failIfEqual(id(div[0][0]), id(div2[0][0]))
         self.failIfEqual(id(div[0][0][0]), id(div2[0][0][0]))
-        
+
     def test_deparent_noparent(self):
         div = self._makeOne('div', {})
         self.assertEqual(div.parent, None)
         div.deparent()
         self.assertEqual(div.parent, None)
-        
+
     def test_deparent_withparent(self):
         parent = self._makeOne('parent', {})
         self.assertEqual(parent.parent, None)
@@ -787,7 +787,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
                                                 None,'span3', 'span2',
                                                     'span1','div1'])
         self.assertEqual(ids(div2.lineage()), ['div2', 'div1'])
-                         
+
 
     def test_shortrepr(self):
         div = self._makeOne('div', {'id':'div1'})
@@ -803,7 +803,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
         div.append(div2)
         r = div.shortrepr()
         self.assertEqual(r, '<div id="div1"><span><span id="2"></span></span><div2 id="div2"></div2></div>')
-        
+
     def test_shortrepr2(self):
         from meld3 import parse_xmlstring
         root = parse_xmlstring(_COMPLEX_XHTML)
@@ -893,7 +893,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
         expected = []
         self.assertEqual(expected, actual)
 
-                         
+
     def test_diffmeld3(self):
         source = """
         <root>
@@ -1072,7 +1072,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
         actual = [x.meldid() for x in changes['reduced']['removed']]
         expected = []
         self.assertEqual(expected, actual)
-        
+
 
 
 class ParserTests(unittest.TestCase):
@@ -1146,7 +1146,7 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(body.tag, xhtml_ns % 'body')
         self.assertEqual(body.attrib, {})
         self.assertEqual(body.parent, root)
-        
+
         div1 = body[0]
         self.assertEqual(div1.tag, xhtml_ns % 'div')
         self.assertEqual(div1.attrib, {'{http://foo/bar}baz': 'slab'})
@@ -1214,7 +1214,7 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(title.tag, 'title')
         self.assertEqual(title.attrib[_MELD_ID], 'title')
         self.assertEqual(title.parent, head)
-        
+
         body = root[1]
         self.assertEqual(body.tag, 'body')
         self.assertEqual(body.attrib, {})
@@ -1241,7 +1241,7 @@ class ParserTests(unittest.TestCase):
         br5 = body[7]
         img = body[8]
         self.assertEqual(img.tag, 'img')
-        
+
 
     def test_dupe_meldids_fails_parse_xml(self):
         meld_ns = "http://www.plope.com/software/meld3"
@@ -1408,7 +1408,7 @@ class WriterTests(unittest.TestCase):
     </div>
   </body>
 </html>"""
-          
+
         self.assertNormalizedHTMLEqual(actual, expected)
 
     def test_write_complex_xhtml_as_xhtml(self):
@@ -1469,7 +1469,7 @@ class WriterTests(unittest.TestCase):
   </body>
 </html>"""
         self.assertEqual(actual, expected)
-        
+
     def test_write_booleanattrs_xhtml_as_html(self):
         root = self._parse(_BOOLEANATTRS_XHTML)
         actual = self._write_html(root)
@@ -1525,7 +1525,7 @@ class WriterTests(unittest.TestCase):
 </root>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
-        
+
     def test_write_simple_xml_as_fragment(self):
         root = self._parse(_SIMPLE_XML)
         from meld3 import doctype
@@ -1539,7 +1539,7 @@ class WriterTests(unittest.TestCase):
   </list>
 </root>"""
         self.assertNormalizedXMLEqual(actual, expected)
-        
+
     def test_write_simple_xml_with_doctype(self):
         root = self._parse(_SIMPLE_XML)
         from meld3 import doctype
@@ -1598,7 +1598,7 @@ class WriterTests(unittest.TestCase):
         actual = self._write_xhtml(root, fragment=True)
         expected = """<html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
-        
+
     def test_write_simple_xhtml_with_doctype(self):
         root = self._parse(_SIMPLE_XHTML)
         from meld3 import doctype
@@ -1628,7 +1628,7 @@ class WriterTests(unittest.TestCase):
         actual = self._write_html(root, fragment=True)
         expected = """<html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
-        
+
     def test_write_simple_xhtml_with_doctype_as_html(self):
         root = self._parse(_SIMPLE_XHTML)
         actual = self._write_html(root)
@@ -1695,7 +1695,7 @@ class WriterTests(unittest.TestCase):
         </list>
         </root>"""
         self.assertNormalizedXMLEqual(actual, expected)
-        
+
     def test_content_structure(self):
         root = self._parse(_SIMPLE_XML)
         D = root.findmeld('description')
@@ -1727,7 +1727,7 @@ class WriterTests(unittest.TestCase):
         </list>
         </root>"""
         self.assertNormalizedXMLEqual(actual, expected)
-        
+
     def test_replace_structure(self):
         root = self._parse(_SIMPLE_XML)
         D = root.findmeld('description')
@@ -1779,4 +1779,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
+
