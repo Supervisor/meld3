@@ -1,5 +1,5 @@
-Next Release
-------------
+0.6.9 (2012-09-12)
+------------------
 
   Fixed a test failure that only occurred on some builds of
   Python 2.7 where parsing an unknown entity could raise
