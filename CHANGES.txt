@@ -1,4 +1,9 @@
+Next Release
+------------
+
+
 0.6.8 (2012-01-12)
+------------------
 
   Added the C extension source (cmeld3.c) to the release package
   by including it in MANIFEST.in.  Thanks to Soren Hansen for
@@ -8,16 +13,19 @@
   of Python is not detected.
 
 0.6.7 (2010-08-04)
+------------------
 
   Make compatible with Python 2.7 (patch kindly contributed by
   Jonathan Riboux).
 
-0.6.6
+0.6.6 (2009-09-30)
+------------------
 
   Change download location.  This really should be a setuptools
   package so we can upload it to PyPI.  No functionality changes.
 
-0.6.5
+0.6.5 (2008-07-21)
+------------------
 
   Apply patch for Python 2.5 compatibility from both
   Toshio and Anders.
@@ -29,7 +37,8 @@
 
   .. in order to get the cmeld3.c file in the distribution.
 
-0.6.4
+0.6.4 (2008-01-17)
+------------------
 
   Make the default build use the Python-based meld "helper" instead of
   the C-based one.  Since the primary consumer of meld3 (as far as I
@@ -45,18 +54,21 @@
   As a result of this change, the "NO_MELD3_EXTENSION_MODULES"
   environment variable introduced in 0.6.1 now has no effect.
 
-0.6.3
+0.6.3 (2007-08-25)
+------------------
 
   Fixed two more memory leaks (one in bfclonehandler, the other in
   findmeldhandler) in the c helper module.
 
-0.6.2
+0.6.2 (2007-08-23)
+------------------
 
   Fixed a number of memory leaks in the C implementation of the helper
   module.  Any use of "findmeld", "clone", "getiterator", or "content"
   previously leaked references.
 
-0.6.1
+0.6.1 (2007-08-21)
+------------------
 
   Allow people to install meld3 without building extension modules.
   If the environment variable "NO_MELD3_EXTENSION_MODULES" is set, the
@@ -64,12 +76,14 @@
   will still work, only more slowly than if the extension modules
   existed.
 
-0.6
+0.6 (2006-09-18)
+----------------
 
   Fixed crashbug when repeating trees with "structure" nodes in them.
   Symptom: bus error.  Thanks to Terrence Brannon for the report.
 
-0.5
+0.5 (2006-02-19)
+----------------
 
   Add 'fillmeldhtmlform' method to nodes.
 
@@ -129,7 +143,7 @@
   aren't already part of entities.
 
   Do the minimal possible thing to escape text and attribute values during
-  rendering.  For text, this is escaping ampersands that aren't parts of 
+  rendering.  For text, this is escaping ampersands that aren't parts of
   entities and the less-than (<) character.  For attribute values, this is
   amps and less-than as well as the quote (") character.  This was done
   partly because I think the spec allows it but it's also what Kid does,
@@ -147,7 +161,8 @@
 
   Add a meldprofile.py script.
 
-0.4
+0.4 (2006-01-01)
+----------------
 
   The clone() method of elements copied neither the text nor the tail
   of the element (this is what caused markup created by "repeats" to
@@ -165,7 +180,8 @@
 
   Make source distro into a distutils-installable package.
 
-0.3
+0.3 (2005-12-26)
+----------------
 
   Fix broken example.py file.
 
@@ -200,8 +216,8 @@
   which calls their respective 'parse_xxx' function with a StringIO
   containing the passed text.
 
-
-0.2
+0.2 (2005-12-24)
+----------------
 
   Use a method on elements to do writing rather than requiring a user
   call a "write" function.  The equivalent is now a method of the
@@ -317,7 +333,7 @@
   dictionary.  For example, if an element contains subelements with
   the meld ids "foo" and "bar", you can replace those nodes' text
   values with the following::
-    
+
     element % {'foo':'foo text', 'bar':'bar text'}
 
   __mod__ will not accept a non-dictionary-like object (such as a list
@@ -330,8 +346,7 @@
   Using duplicate meld identifiers on separate elements in the document
   now causes a ValueError to be raised at parse time.
 
-0.1
+0.1 (2005-12-18)
+----------------
 
    Initial release.
-
-
