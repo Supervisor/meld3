@@ -1672,13 +1672,10 @@ class WriterTests(unittest.TestCase):
 </html>"""
 
     def test_unknown_entity(self):
-        if sys.version_info[:3] >= (2,7,0):
-            self.assertRaises(SyntaxError, self._parse,
-                              '<html><head></head><body>&fleeb;</body></html>')
-        else:
-            from xml.parsers import expat
-            self.assertRaises(expat.error, self._parse,
-                              '<html><head></head><body>&fleeb;</body></html>')
+        # exception thrown may vary by python or expat version
+        from xml.parsers import expat
+        self.assertRaises((expat.error, SyntaxError), self._parse,
+                          '<html><head></head><body>&fleeb;</body></html>')
 
     def test_content_nostructure(self):
         root = self._parse(_SIMPLE_XML)

@@ -1,6 +1,9 @@
 Next Release
 ------------
 
+  Fixed a test failure that only occurred on some builds of
+  Python 2.7 where parsing an unknown entity could raise
+  an expat.error instead of SyntaxError.
 
 0.6.8 (2012-01-12)
 ------------------
