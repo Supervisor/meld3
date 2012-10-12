@@ -16,3 +16,4 @@ meld3/logfile.dat
 meld3/logfile_zpt.dat
 nosetests.xml
 tmp/
+.idea/

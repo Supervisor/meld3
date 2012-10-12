@@ -1,6 +1,7 @@
 import meld3
 import time
 import timeit
+import sys
 
 parent = meld3._MeldElementInterface('parent', {})
 clonable = meld3._MeldElementInterface('root', {})
@@ -26,15 +27,18 @@ def dotimeit(timer, name):
     best = min(result)
     usec = best * 1e6 / number
     msec = usec / 1000
-    print "%s best of %d: %.*g msec per loop" % (name, repeat, 8, msec)
+    sys.stdout.write("%s best of %d: %.*g msec per loop\n" % (name, repeat, 8, msec))
 
-t = timeit.Timer("meld3.chelper.clone(clonable, parent)",
-                 "from __main__ import meld3, clonable, parent")
-dotimeit(t, "C DF")
+try:
+    t = timeit.Timer("meld3.chelper.clone(clonable, parent)",
+                     "from __main__ import meld3, clonable, parent")
+    dotimeit(t, "C DF")
 
-t = timeit.Timer("meld3.chelper.bfclone(clonable, parent)",
-                 "from __main__ import meld3, clonable, parent")
-dotimeit(t, "C BF")
+    t = timeit.Timer("meld3.chelper.bfclone(clonable, parent)",
+                     "from __main__ import meld3, clonable, parent")
+    dotimeit(t, "C BF")
+except AttributeError:
+    pass
 
 t = timeit.Timer("meld3.pyhelper.clone(clonable, parent)",
                  "from __main__ import meld3, clonable, parent")
