@@ -2,31 +2,24 @@ import os
 import re
 import sys
 PY3 = sys.version>'3'
-
-try:
-    #noinspection PyUnresolvedReferences
-    import htmlentitydefs
-    #noinspection PyUnresolvedReferences
-    from StringIO import StringIO
-    #noinspection PyUnboundLocalVariable
-    basestring = basestring
-    #noinspection PyUnboundLocalVariable
-    unicode = unicode
-    #noinspection PyUnboundLocalVariable
-    unichr = unichr
-    def encode(text, encoding, validate=False):
-        return text.encode(encoding)
-except ImportError:
+if PY3:
     import html.entities as htmlentitydefs
     from io import StringIO
+    long = int
     basestring = str
     unichr = chr
-    UnicodeError = UnicodeEncodeError
     class unicode(str):
         def __init__(self, string, encoding, errors):
             str.__init__(self, string)
     def encode(text, encoding):
         return text
+else:
+    import htmlentitydefs
+    #noinspection PyUnresolvedReferences
+    from StringIO import StringIO
+    def encode(text, encoding):
+        return text.encode(encoding)
+
 try:
     from elementtree.ElementTree import TreeBuilder
     from elementtree.ElementTree import XMLTreeBuilder
