@@ -14,6 +14,7 @@ try:
     from elementtree.ElementTree import QName
     from elementtree.ElementTree import _raise_serialization_error
     from elementtree.ElementTree import _namespace_map
+    from elementtree.ElementTree import _encode_entity
     from elementtree.ElementTree import fixtag
     from elementtree.ElementTree import parse as et_parse
     from elementtree.ElementTree import ElementPath
@@ -25,6 +26,10 @@ except ImportError:
     from xml.etree.ElementTree import QName
     from xml.etree.ElementTree import _raise_serialization_error
     from xml.etree.ElementTree import _namespace_map
+    try:
+        from xml.etree.ElementTree import _encode_entity
+    except ImportError:
+        def _encode_entity(s): return s
     from xml.etree.ElementTree import parse as et_parse
     from xml.etree.ElementTree import ElementPath
 
