@@ -29,7 +29,39 @@ except ImportError:
     try:
         from xml.etree.ElementTree import _encode_entity
     except ImportError:
-        def _encode_entity(s): return s
+        def _encode_entity(text):
+            import sys
+            if sys.version[:3] == "1.5":
+                pattern = re.compile(r"[&<>\"\x80-\xff]+")
+            else:
+                pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
+            _escape_map = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+            }
+            def _encode(s, encoding):
+                try:
+                    return s.encode(encoding)
+                except AttributeError:
+                    return s
+
+            def escape_entities(m, map=_escape_map):
+                out = []
+                append = out.append
+                for char in m.group():
+                    text = map.get(char)
+                    if text is None:
+                        text = "&#%d;" % ord(char)
+                    append(text)
+                return string.join(out, "")
+            try:
+                return _encode(pattern.sub(escape_entities, text), "ascii")
+            except TypeError:
+                raise TypeError(
+                    "cannot serialize %r (type %s)" % (text, type(text).__name__)
+                    )
     from xml.etree.ElementTree import parse as et_parse
     from xml.etree.ElementTree import ElementPath
 
