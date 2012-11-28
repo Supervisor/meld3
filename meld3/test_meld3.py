@@ -1746,10 +1746,20 @@ class WriterTests(unittest.TestCase):
         from meld3 import _escape_cdata
         self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo "" http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_cdata(a))
 
+    def test_escape_cdata_unicodeerror(self):
+        a = eval(r'u"\u0080"')
+        from meld3 import _escape_cdata
+        self.assertEqual('&#128;', _escape_cdata(a, 'ascii'))
+
     def test_escape_attrib(self):
         a = '< > &lt;&amp; &&apos; && &foo "" http://www.plope.com?foo=bar&bang=baz &#123;'
         from meld3 import _escape_attrib
         self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo &quot;&quot; http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_attrib(a))
+
+    def test_escape_attrib_unicodeerror(self):
+        a = eval(r'u"\u0080"')
+        from meld3 import _escape_attrib
+        self.assertEqual('&#128;', _escape_attrib(a, 'ascii'))
 
 def normalize_html(s):
     s = re.sub(r"[ \t]+", " ", s)
