@@ -28,7 +28,7 @@ CLASSIFIERS = [
 
 setup(
     name = 'meld3',
-    version = '0.6.9',
+    version = '0.6.10',
     description = 'meld3 is an HTML/XML templating engine.',
     classifiers = CLASSIFIERS,
     author = 'Chris McDonough',

@@ -1,4 +1,4 @@
-0.6.10 (Next Release)
+0.6.10 (2012-11-27)
 
   Fixed a bug where an exception could be raised when escaping certain
   attribute or cdata values.  This was caused by meld3 trying to use
