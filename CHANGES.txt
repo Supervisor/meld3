@@ -1,3 +1,10 @@
+0.6.10 (Next Release)
+
+  Fixed a bug where an exception could be raised when escaping certain
+  attribute or cdata values.  This was caused by meld3 trying to use
+  _encode_entity from xml.etree without importing it first.  Thanks to
+  Jorge Puente Sarrin for contributing the patch.
+
 0.6.9 (2012-09-12)
 ------------------
 
