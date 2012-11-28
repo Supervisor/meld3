@@ -26,21 +26,21 @@ except ImportError:
     from xml.etree.ElementTree import QName
     from xml.etree.ElementTree import _raise_serialization_error
     from xml.etree.ElementTree import _namespace_map
+    from xml.etree.ElementTree import parse as et_parse
+    from xml.etree.ElementTree import ElementPath
+
     try:
         from xml.etree.ElementTree import _encode_entity
-    except ImportError:
+    except ImportError:  # python 2.7
         def _encode_entity(text):
-            import sys
-            if sys.version[:3] == "1.5":
-                pattern = re.compile(r"[&<>\"\x80-\xff]+")
-            else:
-                pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
+            pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
             _escape_map = {
                 "&": "&amp;",
                 "<": "&lt;",
                 ">": "&gt;",
                 '"': "&quot;",
             }
+
             def _encode(s, encoding):
                 try:
                     return s.encode(encoding)
@@ -56,18 +56,17 @@ except ImportError:
                         text = "&#%d;" % ord(char)
                     append(text)
                 return string.join(out, "")
+
             try:
                 return _encode(pattern.sub(escape_entities, text), "ascii")
             except TypeError:
                 raise TypeError(
                     "cannot serialize %r (type %s)" % (text, type(text).__name__)
                     )
-    from xml.etree.ElementTree import parse as et_parse
-    from xml.etree.ElementTree import ElementPath
 
     try:
         from xml.etree.ElementTree import fixtag
-    except:
+    except ImportError:  # python 2.7
         def fixtag(tag, namespaces):
             # given a decorated tag (of the form {uri}tag), return prefixed
             # tag and namespace declaration, if any
@@ -87,7 +86,7 @@ except ImportError:
             else:
                 xmlns = None
             return "%s:%s" % (prefix, tag), xmlns
-        
+
 
 
 # HTMLTreeBuilder does not exist in python 2.5 standard elementtree
@@ -481,7 +480,7 @@ class _MeldElementInterface:
                                 pass
                 else:
                     node.text = kw[k]
-                        
+
         return unfilled
 
     def findmeld(self, name, default=None):
@@ -594,7 +593,7 @@ class _MeldElementInterface:
                 _write_doctype(write, doctype)
         _write_xml(write, self, encoding, {}, pipeline)
         return ''.join(data)
-        
+
     def write_xml(self, file, encoding=None, doctype=None,
                   fragment=False, declaration=True, pipeline=False):
         """ Write XML to 'file' (which can be a filename or filelike object)
@@ -707,13 +706,13 @@ class _MeldElementInterface:
         page = self.write_xhtmlstring(encoding, doctype, fragment, declaration,
                                       pipeline)
         file.write(page)
-            
+
     def clone(self, parent=None):
         """ Create a clone of an element.  If parent is not None,
         append the element to the parent.  Recurse as necessary to create
         a deep clone of the element. """
         return helper.bfclone(self, parent)
-    
+
     def deparent(self):
         """ Remove ourselves from our parent node (de-parent) and return
         the index of the parent which was deleted. """
@@ -745,7 +744,7 @@ class _MeldElementInterface:
         tgtelements = other.findmelds()
         srcids = [ x.meldid() for x in srcelements ]
         tgtids = [ x.meldid() for x in tgtelements ]
-        
+
         removed = []
         for srcelement in srcelements:
             if srcelement.meldid() not in tgtids:
@@ -755,7 +754,7 @@ class _MeldElementInterface:
         for tgtelement in tgtelements:
             if tgtelement.meldid() not in srcids:
                 added.append(tgtelement)
-                
+
         moved = []
         for srcelement in srcelements:
             srcid = srcelement.meldid()
@@ -776,7 +775,7 @@ class _MeldElementInterface:
 
         return {'unreduced':unreduced,
                 'reduced':reduced}
-            
+
     def meldid(self):
         return self.attrib.get(_MELD_ID)
 
@@ -799,7 +798,7 @@ class MeldParser(XMLTreeBuilder):
     case of a comment existing outside the root element and ignores
     processing instructions entirely.  We need to validate that there
     are no repeated meld id's in the source as well """
-    
+
     def __init__(self, html=0, target=None):
         XMLTreeBuilder.__init__(self, html, target)
         # assumes ElementTree 1.2.X
@@ -1062,10 +1061,10 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
                 else:
                     v = attrib[k]
                     to_write += " %s=\"%s\"" % (k, v)
-                        
+
         for k, v in xmlns_items:
             to_write += " %s=\"%s\"" % (k, v)
-                    
+
         to_write += ">"
 
         if text is not None and text:
@@ -1150,7 +1149,7 @@ def _write_html_no_encoding(write, node, namespaces):
             if len(attrib) > 1:
                 attrib_keys = attrib.keys()
                 attrib_keys.sort()
-                
+
             else:
                 attrib_keys = attrib
             for k in attrib_keys:
@@ -1164,10 +1163,10 @@ def _write_html_no_encoding(write, node, namespaces):
                 else:
                     v = attrib[k]
                     to_write += " %s=\"%s\"" % (k, v)
-                        
+
         for k, v in xmlns_items:
             to_write += " %s=\"%s\"" % (k, v)
-                    
+
         to_write += ">"
 
         if text is not None and text:
@@ -1383,7 +1382,7 @@ def diffreduce(elements):
             continue
         reduced.append(element)
     return reduced
-    
+
 def intersection(S1, S2):
     L = []
     for element in S1:
