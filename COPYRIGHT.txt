@@ -1,4 +1,4 @@
-Copyright (c) 2005-2012 Chris McDonough.
+Copyright (c) 2005-2013 Chris McDonough.
 All Rights Reserved.
 
 This software is subject to the provisions of the Zope Public License,
