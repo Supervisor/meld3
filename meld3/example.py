@@ -30,7 +30,10 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
 """
 from meld3 import parse_xmlstring
 from meld3 import parse_htmlstring
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import sys
 
 root = parse_xmlstring(xml)

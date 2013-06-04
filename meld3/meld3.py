@@ -1,10 +1,24 @@
-import htmlentitydefs
 import os
 import re
-import types
-import mimetools
-import string
-from StringIO import StringIO
+import sys
+PY3 = sys.version>'3'
+if PY3:
+    import html.entities as htmlentitydefs
+    from io import StringIO
+    long = int
+    basestring = str
+    unichr = chr
+    class unicode(str):
+        def __init__(self, string, encoding, errors):
+            str.__init__(self, string)
+    def encode(text, encoding):
+        return text
+else:
+    import htmlentitydefs
+    #noinspection PyUnresolvedReferences
+    from StringIO import StringIO
+    def encode(text, encoding):
+        return text.encode(encoding)
 
 try:
     from elementtree.ElementTree import TreeBuilder
@@ -26,6 +40,11 @@ except ImportError:
     from xml.etree.ElementTree import QName
     from xml.etree.ElementTree import _raise_serialization_error
     from xml.etree.ElementTree import _namespace_map
+    from xml.etree.ElementTree import XMLParser
+    try:
+        from xml.etree.ElementTree import _encode_entity
+    except ImportError:
+        def _encode_entity(s): return s
     from xml.etree.ElementTree import parse as et_parse
     from xml.etree.ElementTree import ElementPath
 
@@ -72,7 +91,7 @@ except ImportError:
             # tag and namespace declaration, if any
             if isinstance(tag, QName):
                 tag = tag.text
-            namespace_uri, tag = string.split(tag[1:], "}", 1)
+            namespace_uri, tag = tag[1:].split("}", 1)
             prefix = namespaces.get(namespace_uri)
             if prefix is None:
                 prefix = _namespace_map.get(namespace_uri)
@@ -90,10 +109,14 @@ except ImportError:
 
 
 # HTMLTreeBuilder does not exist in python 2.5 standard elementtree
-from HTMLParser import HTMLParser
+try:
+    #noinspection PyUnresolvedReferences
+    from HTMLParser import HTMLParser
+except ImportError:
+    from html.parser import HTMLParser
 AUTOCLOSE = "p", "li", "tr", "th", "td", "head", "body"
 IGNOREEND = "img", "hr", "meta", "link", "br"
-is_not_ascii = re.compile(eval(r'u"[\u0080-\uffff]"')).search
+is_not_ascii = lambda s: False if PY3 else re.compile(eval(r'u"[\u0080-\uffff]"')).search
 
 # replace element factory
 def Replace(text, structure=False):
@@ -267,10 +290,10 @@ class _MeldElementInterface:
         self.attrib[key] = value
 
     def keys(self):
-        return self.attrib.keys()
+        return list(self.attrib.keys())
 
     def items(self):
-        return self.attrib.items()
+        return list(self.attrib.items())
 
     def getiterator(self, *ignored_args, **ignored_kw):
         # we ignore any tag= passed in to us, because it's too painful
@@ -280,8 +303,12 @@ class _MeldElementInterface:
     # overrides to support parent pointers and factories
 
     def __setitem__(self, index, element):
+        if isinstance(index, slice):
+            for e in element:
+                e.parent = self
+        else:
+            element.parent = self
         self._children[index] = element
-        element.parent = self
 
     def __setslice__(self, start, stop, elements):
         for element in elements:
@@ -297,8 +324,11 @@ class _MeldElementInterface:
         element.parent = self
 
     def __delitem__(self, index):
-        ob = self._children[index]
-        ob.parent = None
+        if isinstance(index, slice):
+            for ob in self._children[index]:
+                ob.parent = None
+        else:
+            self._children[index].parent = None
         del self._children[index]
 
     def __delslice__(self, start, stop):
@@ -318,7 +348,7 @@ class _MeldElementInterface:
 
     def __mod__(self, other):
         """ Fill in the text values of meld nodes in tree; only
-        support dictionarylike operand (sequence operand doesn't seem
+        support dictionary-like operand (sequence operand doesn't seem
         to make sense here)"""
         return self.fillmelds(**other)
 
@@ -575,10 +605,10 @@ class _MeldElementInterface:
         """ Set attributes on this node. """
         for k, v in kw.items():
             # prevent this from getting to the parser if possible
-            if not isinstance(k, types.StringTypes):
-                raise ValueError, 'do not set non-stringtype as key: %s' % k
-            if not isinstance(v, types.StringTypes):
-                raise ValueError, 'do not set non-stringtype as val: %s' % v
+            if not isinstance(k, basestring):
+                raise ValueError('do not set non-stringtype as key: %s' % k)
+            if not isinstance(v, basestring):
+                raise ValueError('do not set non-stringtype as val: %s' % v)
             self.attrib[k] = kw[k]
 
     # output methods
@@ -596,7 +626,7 @@ class _MeldElementInterface:
 
     def write_xml(self, file, encoding=None, doctype=None,
                   fragment=False, declaration=True, pipeline=False):
-        """ Write XML to 'file' (which can be a filename or filelike object)
+        """ Write XML to 'file' (which can be a filename or file-like object)
 
         encoding    - encoding string (if None, 'utf-8' encoding is assumed)
                       Must be a recognizable Python encoding type.
@@ -644,7 +674,7 @@ class _MeldElementInterface:
 
     def write_html(self, file, encoding=None, doctype=doctype.html,
                    fragment=False):
-        """ Write HTML to 'file' (which can be a filename or filelike object)
+        """ Write HTML to 'file' (which can be a filename or file-like object)
 
         encoding    - encoding string (if None, 'utf-8' encoding is assumed).
                       Unlike XML output, this is not used in a declaration,
@@ -681,7 +711,7 @@ class _MeldElementInterface:
 
     def write_xhtml(self, file, encoding=None, doctype=doctype.xhtml,
                     fragment=False, declaration=False, pipeline=False):
-        """ Write XHTML to 'file' (which can be a filename or filelike object)
+        """ Write XHTML to 'file' (which can be a filename or file-like object)
 
         encoding    - encoding string (if None, 'utf-8' encoding is assumed)
                       Must be a recognizable Python encoding type.
@@ -788,8 +818,15 @@ class _MeldElementInterface:
         return L
 
 
-def MeldTreeBuilder():
-    return TreeBuilder(element_factory=_MeldElementInterface)
+class MeldTreeBuilder(TreeBuilder):
+    def __init__(self):
+        TreeBuilder.__init__(self, element_factory=_MeldElementInterface)
+    def comment(self, data):
+        self.start(Comment, {})
+        self.data(data)
+        self.end(Comment)
+    def doctype(self, name, pubid, system):
+        pass
 
 class MeldParser(XMLTreeBuilder):
 
@@ -802,7 +839,8 @@ class MeldParser(XMLTreeBuilder):
     def __init__(self, html=0, target=None):
         XMLTreeBuilder.__init__(self, html, target)
         # assumes ElementTree 1.2.X
-        self._parser.CommentHandler = self.handle_comment
+        if not PY3:
+            self._parser.CommentHandler = self.handle_comment
         self.meldids = {}
 
     def handle_comment(self, data):
@@ -818,7 +856,7 @@ class MeldParser(XMLTreeBuilder):
             if '{' + key == _MELD_ID:
                 meldid = attrib_in[key]
                 if self.meldids.get(meldid):
-                    raise ValueError, ('Repeated meld id "%s" in source' %
+                    raise ValueError('Repeated meld id "%s" in source' %
                                        meldid)
                 self.meldids[meldid] = 1
         return XMLTreeBuilder._start(self, tag, attrib_in)
@@ -834,7 +872,7 @@ class MeldParser(XMLTreeBuilder):
             if _MELD_ID == attrib:
                 meldid = attrib_in[i+1]
                 if self.meldids.get(meldid):
-                    raise ValueError, ('Repeated meld id "%s" in source' %
+                    raise ValueError('Repeated meld id "%s" in source' %
                                        meldid)
                 self.meldids[meldid] = 1
         return XMLTreeBuilder._start_list(self, tag, attrib_in)
@@ -873,11 +911,7 @@ class HTMLMeldParser(HTMLParser):
                 elif k == "content":
                     content = v
             if http_equiv == "content-type" and content:
-                # use mimetools to parse the http header
-                header = mimetools.Message(
-                    StringIO("%s: %s\n\n" % (http_equiv, content))
-                    )
-                encoding = header.getparam("charset")
+                encoding = dict(v.strip().partition('=')[0::2] for v in content.split(';')).get('charset')
                 if encoding:
                     self.encoding = encoding
         if tag in AUTOCLOSE:
@@ -890,7 +924,7 @@ class HTMLMeldParser(HTMLParser):
                 if k == _MELD_SHORT_ID:
                     k = _MELD_ID
                     if self.meldids.get(v):
-                        raise ValueError, ('Repeated meld id "%s" in source' %
+                        raise ValueError('Repeated meld id "%s" in source' %
                                            v)
                     self.meldids[v] = 1
                 else:
@@ -956,7 +990,7 @@ def do_parse(source, parser):
     return root
 
 def parse_xml(source):
-    """ Parse source (a filelike object) into an element tree.  If
+    """ Parse source (a file-like object) into an element tree.  If
     html is true, use a parser that can resolve somewhat ambiguous
     HTML into XHTML.  Otherwise use a 'normal' parser only."""
     builder = MeldTreeBuilder()
@@ -981,7 +1015,7 @@ cdata_needs_escaping = re.compile(r'[&<]').search
 
 def _both_case(mapping):
     # Add equivalent upper-case keys to mapping.
-    lc_keys = mapping.keys()
+    lc_keys = list(mapping.keys())
     for k in lc_keys:
         mapping[k.upper()] = mapping[k]
 
@@ -1015,17 +1049,17 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
         if not node.structure:
             if cdata_needs_escaping(text):
                 text = _escape_cdata(text)
-        write(text.encode(encoding))
+        write(encode(text,encoding))
 
     elif tag is Comment:
         if cdata_needs_escaping(text):
             text = _escape_cdata(text)
-        write('<!-- ' + text + ' -->'.encode(encoding))
+        write(encode('<!-- ' + text + ' -->', encoding))
 
     elif tag is ProcessingInstruction:
         if cdata_needs_escaping(text):
             text = _escape_cdata(text)
-        write('<!-- ' + text + ' -->'.encode(encoding))
+        write(encode('<!-- ' + text + ' -->', encoding))
 
     else:
         xmlns_items = [] # new namespaces in this scope
@@ -1040,13 +1074,13 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
         except TypeError:
             _raise_serialization_error(tag)
 
-        to_write += "<%s" % tag.encode(encoding)
+        to_write += "<%s" % encode(tag,encoding)
 
         attrib = node.attrib
 
         if attrib is not None:
             if len(attrib) > 1:
-                attrib_keys = attrib.keys()
+                attrib_keys = list(attrib.keys())
                 attrib_keys.sort()
             else:
                 attrib_keys = attrib
@@ -1057,7 +1091,7 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
                 except TypeError:
                     _raise_serialization_error(k)
                 if k in _HTMLATTRS_BOOLEAN:
-                    to_write += ' ' + k.encode(encoding)
+                    to_write += ' ' + encode(k,encoding)
                 else:
                     v = attrib[k]
                     to_write += " %s=\"%s\"" % (k, v)
@@ -1069,11 +1103,11 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
 
         if text is not None and text:
             if tag in _HTMLTAGS_NOESCAPE:
-                to_write += text.encode(encoding)
+                to_write += encode(text,encoding)
             elif cdata_needs_escaping(text):
                 to_write += _escape_cdata(text)
             else:
-                to_write += text.encode(encoding)
+                to_write += encode(text,encoding)
 
         write(to_write)
 
@@ -1090,13 +1124,13 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
                 _write_html(write, child, encoding, namespaces, depth, maxdepth)
 
         if text or node._children or tag not in _HTMLTAGS_UNBALANCED:
-            write("</" + tag.encode(encoding)  + ">")
+            write("</" + encode(tag,encoding) + ">")
 
     if tail:
         if cdata_needs_escaping(tail):
             write(_escape_cdata(tail))
         else:
-            write(tail.encode(encoding))
+            write(encode(tail,encoding))
 
 def _write_html_no_encoding(write, node, namespaces):
     """ Append HTML to string without any particular unicode encoding.
@@ -1147,7 +1181,7 @@ def _write_html_no_encoding(write, node, namespaces):
 
         if attrib is not None:
             if len(attrib) > 1:
-                attrib_keys = attrib.keys()
+                attrib_keys = list(attrib.keys())
                 attrib_keys.sort()
 
             else:
@@ -1203,7 +1237,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
     elif tag is Replace:
         if node.structure:
             # this may produce invalid xml
-            write(node.text.encode(encoding))
+            write(encode(node.text,encoding))
         else:
             write(_escape_cdata(node.text, encoding))
     else:
@@ -1211,7 +1245,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
             if tag[:_XHTML_PREFIX_LEN] == _XHTML_PREFIX:
                 tag = tag[_XHTML_PREFIX_LEN:]
         if node.attrib:
-            items = node.attrib.items()
+            items = list(node.attrib.items())
         else:
             items = []  # must always be sortable.
         xmlns_items = [] # new namespaces in this scope
@@ -1222,7 +1256,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
                     xmlns_items.append(xmlns)
         except TypeError:
             _raise_serialization_error(tag)
-        write("<" + tag.encode(encoding))
+        write("<" + encode(tag,encoding))
         if items or xmlns_items:
             items.sort() # lexical order
             for k, v in items:
@@ -1239,10 +1273,10 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
                             continue
                 except TypeError:
                     _raise_serialization_error(k)
-                write(" %s=\"%s\"" % (k.encode(encoding),
+                write(" %s=\"%s\"" % (encode(k,encoding),
                                       _escape_attrib(v, encoding)))
             for k, v in xmlns_items:
-                write(" %s=\"%s\"" % (k.encode(encoding),
+                write(" %s=\"%s\"" % (encode(k,encoding),
                                       _escape_attrib(v, encoding)))
         if node.text or node._children:
             write(">")
@@ -1250,7 +1284,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
                 write(_escape_cdata(node.text, encoding))
             for n in node._children:
                 _write_xml(write, n, encoding, namespaces, pipeline, xhtml)
-            write("</" + tag.encode(encoding) + ">")
+            write("</" + encode(tag,encoding) + ">")
         else:
             write(" />")
         for k, v in xmlns_items:
@@ -1267,7 +1301,7 @@ def _escape_cdata(text, encoding=None):
     try:
         if encoding:
             try:
-                text = text.encode(encoding)
+                text = encode(text,encoding)
             except UnicodeError:
                 return _encode_entity(text)
         text = nonentity_re.sub('&amp;', text)
@@ -1281,7 +1315,7 @@ def _escape_attrib(text, encoding=None):
     try:
         if encoding:
             try:
-                text = text.encode(encoding)
+                text = encode(text,encoding)
             except UnicodeError:
                 return _encode_entity(text)
         # don't requote properly-quoted entities
@@ -1317,13 +1351,13 @@ def _write_doctype(write, doctype):
     try:
         name, pubid, system = doctype
     except (ValueError, TypeError):
-        raise ValueError, ("doctype must be supplied as a 3-tuple in the form "
+        raise ValueError("doctype must be supplied as a 3-tuple in the form "
                            "(name, pubid, system) e.g. '%s'" % doctype.xhtml)
     write('<!DOCTYPE %s PUBLIC "%s" "%s">\n' % (name, pubid, system))
 
 xml_decl_re = re.compile(r'<\?xml .*?\?>')
 begin_tag_re = re.compile(r'<[^/?!]?\w+')
-'<!DOCTYPE %s PUBLIC "%s" "%s">' % doctype.html
+#'<!DOCTYPE %s PUBLIC "%s" "%s">' % doctype.html
 
 def insert_doctype(data, doctype=doctype.xhtml):
     # jam an html doctype declaration into 'data' if it
@@ -1404,7 +1438,7 @@ def melditerator(element, meldid=None, _MELD_ID=_MELD_ID):
 
 def search(name):
     if not "." in name:
-        raise ValueError("unloadable datatype name: " + `name`)
+        raise ValueError("unloadable datatype name: " + repr(name))
     components = name.split('.')
     start = components[0]
     g = globals()
@@ -1445,7 +1479,7 @@ if __name__ == '__main__':
         mutator = sys.argv[2]
     except IndexError:
         mutator = None
-    import timeit
+#    import timeit
     root = parse_html(open(filename, 'r'))
     io = StringIO()
     if mutator:
