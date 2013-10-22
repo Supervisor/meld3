@@ -29,8 +29,6 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
 </html>
 """
 from meld3 import parse_xmlstring
-from meld3 import parse_htmlstring
-from StringIO import StringIO
 import sys
 
 root = parse_xmlstring(xml)
@@ -47,5 +45,3 @@ for element, item in iterator:
     element.findmeld('td1').content(item['name'])
     element.findmeld('td2').content(item['description'])
 root.write_xhtml(sys.stdout)
-
-

@@ -1,7 +1,6 @@
 import unittest
 from StringIO import StringIO
 import re
-import sys
 
 _SIMPLE_XML = r"""<?xml version="1.0"?>
 <root xmlns:meld="http://www.plope.com/software/meld3">
@@ -1513,7 +1512,6 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xml_override_encoding(self):
         root = self._parse(_SIMPLE_XML)
-        from meld3 import doctype
         actual = self._write_xml(root, encoding="latin-1")
         expected = """<?xml version="1.0" encoding="latin-1"?><root>
   <list>
@@ -1528,7 +1526,6 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xml_as_fragment(self):
         root = self._parse(_SIMPLE_XML)
-        from meld3 import doctype
         actual = self._write_xml(root, fragment=True)
         expected = """<root>
   <list>
@@ -1587,14 +1584,12 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xhtml_override_encoding(self):
         root = self._parse(_SIMPLE_XHTML)
-        from meld3 import doctype
         actual = self._write_xhtml(root, encoding="latin-1", declaration=True)
         expected = """<?xml version="1.0" encoding="latin-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_as_fragment(self):
         root = self._parse(_SIMPLE_XHTML)
-        from meld3 import doctype
         actual = self._write_xhtml(root, fragment=True)
         expected = """<html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
@@ -1624,7 +1619,6 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xhtml_as_html_fragment(self):
         root = self._parse(_SIMPLE_XHTML)
-        from meld3 import doctype
         actual = self._write_html(root, fragment=True)
         expected = """<html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)

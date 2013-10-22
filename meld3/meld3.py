@@ -1,5 +1,4 @@
 import htmlentitydefs
-import os
 import re
 import types
 import mimetools
@@ -1431,7 +1430,6 @@ if __name__ == '__main__':
         mutator = sys.argv[2]
     except IndexError:
         mutator = None
-    import timeit
     root = parse_html(open(filename, 'r'))
     io = StringIO()
     if mutator:
@@ -1439,4 +1437,3 @@ if __name__ == '__main__':
         mutator(root)
     root.write_html(io)
     sys.stdout.write(io.getvalue())
-
