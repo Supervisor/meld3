@@ -27,7 +27,7 @@ setup(
     author_email = 'chrism@plope.com',
     maintainer = "Mike Naberezny",
     maintainer_email = "mike@naberezny.com",
-    license='ZPL 2.1',
+    license='BSD-derived (http://www.repoze.org/LICENSE.txt)',
     packages=['meld3'],
     url='https://github.com/supervisor/meld3'
 )

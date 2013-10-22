@@ -5,6 +5,9 @@ Next Release
   by meld3, was not enabled by default, and did not support all meld3
   features.  The pure Python version has very acceptable performance.
 
+  The license has been changed from ZPL 2.1 to the BSD-derived Repoze
+  license, which is the same license used by Supervisor.
+
 0.6.10 (2012-11-27)
 -------------------
 
