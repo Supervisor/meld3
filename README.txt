@@ -484,26 +484,9 @@ Parsing API
 
 To Do
 
-  The API is not yet finalized.
-
   This implementation depends on classes internal to ElementTree and
   hasn't been tested with cElementTree or lxml, and almost certainly
   won't work with either due to this.
 
   See TODO.txt for more to-do items.
 
-Reporting Bugs and Requesting Features
-
-  Please visit http://www.plope.com/software/collector to report bugs
-  and request features.
-
-Environment Variables
-
-  MELD3_PYIMPL
-
-     If set to a non-null value, disables the C extension module which is used
-     to speed things up somewhat.
-
-Have fun!
-
-- Chris McDonough (chrism@plope.com)
