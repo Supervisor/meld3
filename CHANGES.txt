@@ -8,6 +8,9 @@ Next Release
   The license has been changed from ZPL 2.1 to the BSD-derived Repoze
   license, which is the same license used by Supervisor.
 
+  Profiling scripts that had been used early in meld3 development have
+  been removed.
+
 0.6.10 (2012-11-27)
 -------------------
 
