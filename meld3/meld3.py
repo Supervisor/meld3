@@ -681,11 +681,6 @@ class _MeldElementInterface:
         pipeline    - preserve 'meld' namespace identifiers in output
                       for use in pipelining
         """
-        # use a list as a collector, and only call the write method of
-        # the file once we've collected all output (reduce function call
-        # overhead)
-        data = []
-        write = data.append
         if not hasattr(file, "write"):
             file = open(file, "wb")
         page = self.write_xhtmlstring(encoding, doctype, fragment, declaration,
