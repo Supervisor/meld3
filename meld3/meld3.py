@@ -125,8 +125,6 @@ class PyHelper:
         return default
 
     def clone(self, node, parent=None):
-        # NOTE: this is not implemented by the C version (it used to be
-        # but I don't want to maintain it)
         element = _MeldElementInterface(node.tag, node.attrib.copy())
         element.text = node.text
         element.tail = node.tail
@@ -182,17 +180,7 @@ class PyHelper:
         replacenode.structure = structure
         node._children = [replacenode]
 
-pyhelper = PyHelper()
-
-try:
-    import cmeld3 as chelper
-except ImportError:
-    chelper = None
-
-if chelper and not os.getenv('MELD3_PYIMPL'):
-    helper = chelper
-else:
-    helper = pyhelper
+helper = PyHelper()
 
 _MELD_NS_URL  = 'http://www.plope.com/software/meld3'
 _MELD_PREFIX  = '{%s}' % _MELD_NS_URL
@@ -223,7 +211,6 @@ class _MeldElementInterface:
     text   = None
     tail   = None
     structure = None
-    Replace = [Replace] # this is used by C code
 
     # overrides to reduce MRU lookups
     def __init__(self, tag, attrib):
@@ -273,8 +260,8 @@ class _MeldElementInterface:
         return self.attrib.items()
 
     def getiterator(self, *ignored_args, **ignored_kw):
-        # we ignore any tag= passed in to us, because it's too painful
-        # to support in our C version
+        # we ignore any tag= passed in to us, originally because it was too
+        # painfail to support in the old C extension, now for b/w compat
         return helper.getiterator(self)
 
     # overrides to support parent pointers and factories
@@ -401,7 +388,6 @@ class _MeldElementInterface:
                 # an input group is a list of input type="checkbox" or
                 # input type="radio" elements that can be treated as a group
                 # because they attempt to specify the same value
-
 
                 found = []
                 unfound = []

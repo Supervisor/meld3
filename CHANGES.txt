@@ -1,3 +1,10 @@
+Next Release
+------------
+
+  The optional C extension has been removed.  It was only used internally
+  by meld3, was not enabled by default, and did not support all meld3
+  features.  The pure Python version has very acceptable performance.
+
 0.6.10 (2012-11-27)
 -------------------
 
