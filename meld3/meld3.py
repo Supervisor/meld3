@@ -1,7 +1,7 @@
 import htmlentitydefs
 import re
 import types
-import mimetools
+import email
 import string
 from StringIO import StringIO
 
@@ -853,11 +853,11 @@ class HTMLMeldParser(HTMLParser):
                 elif k == "content":
                     content = v
             if http_equiv == "content-type" and content:
-                # use mimetools to parse the http header
-                header = mimetools.Message(
-                    StringIO("%s: %s\n\n" % (http_equiv, content))
+                # use email to parse the http header
+                msg = email.message_from_string(
+                    "%s: %s\n\n" % (http_equiv, content)
                     )
-                encoding = header.getparam("charset")
+                encoding = msg.get_param("charset")
                 if encoding:
                     self.encoding = encoding
         if tag in AUTOCLOSE:
