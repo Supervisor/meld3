@@ -71,7 +71,7 @@ except ImportError:
             # tag and namespace declaration, if any
             if isinstance(tag, QName):
                 tag = tag.text
-            namespace_uri, tag = string.split(tag[1:], "}", 1)
+            namespace_uri, tag = tag[1:].split("}", 1)
             prefix = namespaces.get(namespace_uri)
             if prefix is None:
                 prefix = _namespace_map.get(namespace_uri)
