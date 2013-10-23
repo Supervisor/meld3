@@ -1384,7 +1384,7 @@ def melditerator(element, meldid=None, _MELD_ID=_MELD_ID):
 
 def search(name):
     if not "." in name:
-        raise ValueError("unloadable datatype name: " + `name`)
+        raise ValueError("unloadable datatype name: " + repr(name))
     components = name.split('.')
     start = components[0]
     g = globals()
