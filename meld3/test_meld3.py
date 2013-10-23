@@ -690,10 +690,10 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(div[0][0][0].text, div2[0][0][0].text)
         self.assertEqual(div[0][0][0].tail, div2[0][0][0].tail)
 
-        self.failIfEqual(id(div), id(div2))
-        self.failIfEqual(id(div[0]), id(div2[0]))
-        self.failIfEqual(id(div[0][0]), id(div2[0][0]))
-        self.failIfEqual(id(div[0][0][0]), id(div2[0][0][0]))
+        self.assertNotEqual(id(div), id(div2))
+        self.assertNotEqual(id(div[0]), id(div2[0]))
+        self.assertNotEqual(id(div[0][0]), id(div2[0][0]))
+        self.assertNotEqual(id(div[0][0][0]), id(div2[0][0][0]))
 
     def test_deparent_noparent(self):
         div = self._makeOne('div', {})
