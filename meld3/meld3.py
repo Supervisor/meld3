@@ -561,9 +561,9 @@ class _MeldElementInterface:
         for k, v in kw.items():
             # prevent this from getting to the parser if possible
             if not isinstance(k, types.StringTypes):
-                raise ValueError, 'do not set non-stringtype as key: %s' % k
+                raise ValueError('do not set non-stringtype as key: %s' % k)
             if not isinstance(v, types.StringTypes):
-                raise ValueError, 'do not set non-stringtype as val: %s' % v
+                raise ValueError('do not set non-stringtype as val: %s' % v)
             self.attrib[k] = kw[k]
 
     # output methods
@@ -798,8 +798,8 @@ class MeldParser(XMLTreeBuilder):
             if '{' + key == _MELD_ID:
                 meldid = attrib_in[key]
                 if self.meldids.get(meldid):
-                    raise ValueError, ('Repeated meld id "%s" in source' %
-                                       meldid)
+                    raise ValueError('Repeated meld id "%s" in source' %
+                                     meldid)
                 self.meldids[meldid] = 1
         return XMLTreeBuilder._start(self, tag, attrib_in)
 
@@ -814,8 +814,8 @@ class MeldParser(XMLTreeBuilder):
             if _MELD_ID == attrib:
                 meldid = attrib_in[i+1]
                 if self.meldids.get(meldid):
-                    raise ValueError, ('Repeated meld id "%s" in source' %
-                                       meldid)
+                    raise ValueError('Repeated meld id "%s" in source' %
+                                     meldid)
                 self.meldids[meldid] = 1
         return XMLTreeBuilder._start_list(self, tag, attrib_in)
 
@@ -870,8 +870,8 @@ class HTMLMeldParser(HTMLParser):
                 if k == _MELD_SHORT_ID:
                     k = _MELD_ID
                     if self.meldids.get(v):
-                        raise ValueError, ('Repeated meld id "%s" in source' %
-                                           v)
+                        raise ValueError('Repeated meld id "%s" in source' %
+                                         v)
                     self.meldids[v] = 1
                 else:
                     k = k.lower()
@@ -1297,8 +1297,8 @@ def _write_doctype(write, doctype):
     try:
         name, pubid, system = doctype
     except (ValueError, TypeError):
-        raise ValueError, ("doctype must be supplied as a 3-tuple in the form "
-                           "(name, pubid, system) e.g. '%s'" % doctype.xhtml)
+        raise ValueError("doctype must be supplied as a 3-tuple in the form "
+                         "(name, pubid, system) e.g. '%s'" % doctype.xhtml)
     write('<!DOCTYPE %s PUBLIC "%s" "%s">\n' % (name, pubid, system))
 
 xml_decl_re = re.compile(r'<\?xml .*?\?>')
