@@ -2,7 +2,6 @@ import htmlentitydefs
 import re
 import types
 import email
-import string
 from StringIO import StringIO
 
 try:
@@ -54,7 +53,7 @@ except ImportError:
                     if text is None:
                         text = "&#%d;" % ord(char)
                     append(text)
-                return string.join(out, "")
+                return "".join(out)
 
             try:
                 return _encode(pattern.sub(escape_entities, text), "ascii")
