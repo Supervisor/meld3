@@ -1303,7 +1303,6 @@ def _write_doctype(write, doctype):
 
 xml_decl_re = re.compile(r'<\?xml .*?\?>')
 begin_tag_re = re.compile(r'<[^/?!]?\w+')
-'<!DOCTYPE %s PUBLIC "%s" "%s">' % doctype.html
 
 def insert_doctype(data, doctype=doctype.xhtml):
     # jam an html doctype declaration into 'data' if it
