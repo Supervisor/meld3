@@ -12,7 +12,8 @@ Next Release
   been removed.
 
   Installation now requires setuptools.  For Python versions before 2.5,
-  elementtree is now a requirement for installation.
+  elementtree is now a requirement for installation.  The test suite
+  can now be run with ``python setup.py test``.
 
 0.6.10 (2012-11-27)
 -------------------

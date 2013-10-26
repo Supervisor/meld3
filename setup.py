@@ -34,5 +34,6 @@ setup(
     license = 'BSD-derived (http://www.repoze.org/LICENSE.txt)',
     install_requires = install_requires,
     packages = ['meld3'],
+    test_suite = 'meld3.test_meld3',
     url = 'https://github.com/supervisor/meld3'
 )
