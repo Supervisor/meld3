@@ -8,4 +8,4 @@ python:
   - "2.7"
 # command to run tests
 script:
-  - python meld3/test_meld3.py
+  - python setup.py test -q
