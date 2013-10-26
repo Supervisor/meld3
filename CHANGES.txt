@@ -11,6 +11,9 @@ Next Release
   Profiling scripts that had been used early in meld3 development have
   been removed.
 
+  Installation now requires setuptools.  For Python versions before 2.5,
+  elementtree is now a requirement for installation.
+
 0.6.10 (2012-11-27)
 -------------------
 

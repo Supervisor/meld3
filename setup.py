@@ -1,4 +1,4 @@
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 import os
 import sys
 
@@ -8,6 +8,10 @@ if sys.version_info[:2] < (2, 3) or sys.version_info[0] > 2:
            "install using a supported version." % sys.version)
     sys.stderr.write(msg)
     sys.exit(1)
+
+install_requires = []
+if sys.version_info[:2] < (2, 5):
+    install_requires.append('elementtree')
 
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
@@ -27,7 +31,8 @@ setup(
     author_email = 'chrism@plope.com',
     maintainer = "Mike Naberezny",
     maintainer_email = "mike@naberezny.com",
-    license='BSD-derived (http://www.repoze.org/LICENSE.txt)',
-    packages=['meld3'],
-    url='https://github.com/supervisor/meld3'
+    license = 'BSD-derived (http://www.repoze.org/LICENSE.txt)',
+    install_requires = install_requires,
+    packages = ['meld3'],
+    url = 'https://github.com/supervisor/meld3'
 )
