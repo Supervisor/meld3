@@ -89,13 +89,7 @@ except ImportError:
 
     try:
         from xml.etree.ElementTree import fixtag
-
-# TODO: this except was changed in scottkmaxwell/meld3 from "except ImportError:"
-#       to "except:".  we need to review why.
-#
-#-  except ImportError:  # python 2.7
-    except:
-
+    except ImportError:  # python 2.7 or python 3
         def fixtag(tag, namespaces):
             # given a decorated tag (of the form {uri}tag), return prefixed
             # tag and namespace declaration, if any
