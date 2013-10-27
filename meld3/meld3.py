@@ -48,47 +48,45 @@ except ImportError:
     try:
         from xml.etree.ElementTree import _encode_entity
 
-# TODO: this code for python was removed in scottkmaxwell/meld3.  we need
-#       to review why it was removed may need to be put back.
-#
-#-   except ImportError:  # python 2.7
-#-       def _encode_entity(text):
-#-           pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
-#-           _escape_map = {
-#-               "&": "&amp;",
-#-               "<": "&lt;",
-#-               ">": "&gt;",
-#-               '"': "&quot;",
-#-           }
-#
-#-           def _encode(s, encoding):
-#-               try:
-#-                   return s.encode(encoding)
-#-               except AttributeError:
-#-                   return s
-#
-#-           def escape_entities(m, map=_escape_map):
-#-               out = []
-#-               append = out.append
-#-               for char in m.group():
-#-                   text = map.get(char)
-#-                   if text is None:
-#-                       text = "&#%d;" % ord(char)
-#-                   append(text)
-#-               return "".join(out)
-#
-#-           try:
-#-               return _encode(pattern.sub(escape_entities, text), "ascii")
-#-           except TypeError:
-#-               raise TypeError(
-#-                   "cannot serialize %r (type %s)" % (text, type(text).__name__)
-#-                   )
-
-    # TODO: this code for python 3 does not have the escape map like above,
-    #       do we need to add it?
     except ImportError:
-        def _encode_entity(s):
-            return s
+        if PY3:
+            # TODO: this code for python 3 does not have the escape map
+            #       like below, do we need to add it?
+            def _encode_entity(s):
+                return s
+
+        else:  # python 2.7
+            def _encode_entity(text):
+                pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
+                _escape_map = {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                }
+
+                def _encode(s, encoding):
+                    try:
+                        return s.encode(encoding)
+                    except AttributeError:
+                        return s
+
+                def escape_entities(m, map=_escape_map):
+                    out = []
+                    append = out.append
+                    for char in m.group():
+                        text = map.get(char)
+                        if text is None:
+                            text = "&#%d;" % ord(char)
+                        append(text)
+                    return "".join(out)
+
+                try:
+                    return _encode(pattern.sub(escape_entities, text), "ascii")
+                except TypeError:
+                    raise TypeError(
+                        "cannot serialize %r (type %s)" % (text, type(text).__name__)
+                        )
 
     try:
         from xml.etree.ElementTree import fixtag
