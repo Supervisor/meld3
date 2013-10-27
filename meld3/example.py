@@ -31,7 +31,7 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
 from meld3 import parse_xmlstring
 import sys
 
-def main():
+def main(out=sys.stdout):
     root = parse_xmlstring(xml)
     root.findmeld('title').content('My document')
     root.findmeld('form1').attributes(action='./handler')
@@ -45,7 +45,7 @@ def main():
     for element, item in iterator:
         element.findmeld('td1').content(item['name'])
         element.findmeld('td2').content(item['description'])
-    root.write_xhtml(sys.stdout)
+    root.write_xhtml(out)
 
 if __name__ == '__main__':
     main()
