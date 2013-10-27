@@ -31,17 +31,21 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
 from meld3 import parse_xmlstring
 import sys
 
-root = parse_xmlstring(xml)
-root.findmeld('title').content('My document')
-root.findmeld('form1').attributes(action='./handler')
-data = (
-    {'name':'Boys',
-     'description':'Ugly'},
-    {'name':'Girls',
-     'description':'Pretty'},
-    )
-iterator = root.findmeld('tr').repeat(data)
-for element, item in iterator:
-    element.findmeld('td1').content(item['name'])
-    element.findmeld('td2').content(item['description'])
-root.write_xhtml(sys.stdout)
+def main():
+    root = parse_xmlstring(xml)
+    root.findmeld('title').content('My document')
+    root.findmeld('form1').attributes(action='./handler')
+    data = (
+        {'name':'Boys',
+         'description':'Ugly'},
+        {'name':'Girls',
+         'description':'Pretty'},
+        )
+    iterator = root.findmeld('tr').repeat(data)
+    for element, item in iterator:
+        element.findmeld('td1').content(item['name'])
+        element.findmeld('td2').content(item['description'])
+    root.write_xhtml(sys.stdout)
+
+if __name__ == '__main__':
+    main()
