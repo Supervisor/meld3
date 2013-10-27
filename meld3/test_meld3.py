@@ -1,7 +1,11 @@
 import unittest
-from StringIO import StringIO
 import re
 import sys
+
+try:
+  from StringIO import StringIO
+except: # python 3
+  from io import StringIO
 
 _SIMPLE_XML = r"""<?xml version="1.0"?>
 <root xmlns:meld="http://www.plope.com/software/meld3">
