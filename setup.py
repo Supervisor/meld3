@@ -2,12 +2,15 @@ from setuptools import setup, Extension
 import os
 import sys
 
-if sys.version_info[:2] < (2, 3) or sys.version_info[0] > 2:
-    msg = ("meld3 requires Python 2.3 or later but does not work on any "
-           "version of Python 3.  You are using version %s.  Please "
-           "install using a supported version." % sys.version)
-    sys.stderr.write(msg)
-    sys.exit(1)
+py_version = sys.version_info[:2]
+PY3 = py_version[0] == 3
+
+if PY3:
+    if py_version < (3, 2):
+        raise RuntimeError('On Python 3, meld3 requires Python 3.2 or later')
+else:
+    if py_version < (2, 3):
+        raise RuntimeError('On Python 2, meld3 requires Python 2.3 or later')
 
 install_requires = []
 if sys.version_info[:2] < (2, 5):

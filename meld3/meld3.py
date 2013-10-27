@@ -1,8 +1,25 @@
-import htmlentitydefs
 import re
-import types
+import sys
 import email
-from StringIO import StringIO
+
+PY3 = sys.version_info[0] == 3
+
+if PY3:
+    import html.entities as htmlentitydefs
+    from io import StringIO
+    long = int
+    basestring = str
+    unichr = chr
+    class unicode(str):
+        def __init__(self, string, encoding, errors):
+            str.__init__(self, string)
+    def encode(text, encoding):
+        return text
+else:
+    import htmlentitydefs
+    from StringIO import StringIO
+    def encode(text, encoding):
+        return text.encode(encoding)
 
 try:
     from elementtree.ElementTree import TreeBuilder
@@ -24,47 +41,64 @@ except ImportError:
     from xml.etree.ElementTree import QName
     from xml.etree.ElementTree import _raise_serialization_error
     from xml.etree.ElementTree import _namespace_map
+    from xml.etree.ElementTree import XMLParser
     from xml.etree.ElementTree import parse as et_parse
     from xml.etree.ElementTree import ElementPath
 
     try:
         from xml.etree.ElementTree import _encode_entity
-    except ImportError:  # python 2.7
-        def _encode_entity(text):
-            pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
-            _escape_map = {
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-            }
 
-            def _encode(s, encoding):
-                try:
-                    return s.encode(encoding)
-                except AttributeError:
-                    return s
+# TODO: this code for python was removed in scottkmaxwell/meld3.  we need
+#       to review why it was removed may need to be put back.
+#
+#-   except ImportError:  # python 2.7
+#-       def _encode_entity(text):
+#-           pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
+#-           _escape_map = {
+#-               "&": "&amp;",
+#-               "<": "&lt;",
+#-               ">": "&gt;",
+#-               '"': "&quot;",
+#-           }
+#
+#-           def _encode(s, encoding):
+#-               try:
+#-                   return s.encode(encoding)
+#-               except AttributeError:
+#-                   return s
+#
+#-           def escape_entities(m, map=_escape_map):
+#-               out = []
+#-               append = out.append
+#-               for char in m.group():
+#-                   text = map.get(char)
+#-                   if text is None:
+#-                       text = "&#%d;" % ord(char)
+#-                   append(text)
+#-               return "".join(out)
+#
+#-           try:
+#-               return _encode(pattern.sub(escape_entities, text), "ascii")
+#-           except TypeError:
+#-               raise TypeError(
+#-                   "cannot serialize %r (type %s)" % (text, type(text).__name__)
+#-                   )
 
-            def escape_entities(m, map=_escape_map):
-                out = []
-                append = out.append
-                for char in m.group():
-                    text = map.get(char)
-                    if text is None:
-                        text = "&#%d;" % ord(char)
-                    append(text)
-                return "".join(out)
-
-            try:
-                return _encode(pattern.sub(escape_entities, text), "ascii")
-            except TypeError:
-                raise TypeError(
-                    "cannot serialize %r (type %s)" % (text, type(text).__name__)
-                    )
+    # TODO: this code for python 3 does not have the escape map like above,
+    #       do we need to add it?
+    except ImportError:
+        def _encode_entity(s):
+            return s
 
     try:
         from xml.etree.ElementTree import fixtag
-    except ImportError:  # python 2.7
+
+# TODO: this except was changed in scottkmaxwell/meld3 from "except ImportError:"
+#       to "except:".  we need to review why.
+#
+#-  except ImportError:  # python 2.7
+    except:
+
         def fixtag(tag, namespaces):
             # given a decorated tag (of the form {uri}tag), return prefixed
             # tag and namespace declaration, if any
@@ -88,10 +122,18 @@ except ImportError:
 
 
 # HTMLTreeBuilder does not exist in python 2.5 standard elementtree
-from HTMLParser import HTMLParser
+try:
+    from HTMLParser import HTMLParser
+except ImportError:  # python 3
+    from html.parser import HTMLParser
 AUTOCLOSE = "p", "li", "tr", "th", "td", "head", "body"
 IGNOREEND = "img", "hr", "meta", "link", "br"
-is_not_ascii = re.compile(eval(r'u"[\u0080-\uffff]"')).search
+
+if PY3:
+    def is_not_ascii(s):
+        return False
+else:
+    is_not_ascii = re.compile(eval(r'u"[\u0080-\uffff]"')).search
 
 # replace element factory
 def Replace(text, structure=False):
@@ -252,10 +294,10 @@ class _MeldElementInterface:
         self.attrib[key] = value
 
     def keys(self):
-        return self.attrib.keys()
+        return list(self.attrib.keys())
 
     def items(self):
-        return self.attrib.items()
+        return list(self.attrib.items())
 
     def getiterator(self, *ignored_args, **ignored_kw):
         # we ignore any tag= passed in to us, originally because it was too
@@ -265,9 +307,16 @@ class _MeldElementInterface:
     # overrides to support parent pointers and factories
 
     def __setitem__(self, index, element):
+        if isinstance(index, slice):
+            for e in element:
+                e.parent = self
+        else:
+            element.parent = self
+
         self._children[index] = element
         element.parent = self
 
+    # TODO: Can __setslice__ be removed now?
     def __setslice__(self, start, stop, elements):
         for element in elements:
             element.parent = self
@@ -282,10 +331,17 @@ class _MeldElementInterface:
         element.parent = self
 
     def __delitem__(self, index):
+        if isinstance(index, slice):
+            for ob in self._children[index]:
+                ob.parent = None
+        else:
+            self._children[index].parent = None
+
         ob = self._children[index]
         ob.parent = None
         del self._children[index]
 
+    # TODO: Can __delslice__ be removed now?
     def __delslice__(self, start, stop):
         obs = self._children[start:stop]
         for ob in obs:
@@ -559,9 +615,9 @@ class _MeldElementInterface:
         """ Set attributes on this node. """
         for k, v in kw.items():
             # prevent this from getting to the parser if possible
-            if not isinstance(k, types.StringTypes):
+            if not isinstance(k, basestring):
                 raise ValueError('do not set non-stringtype as key: %s' % k)
-            if not isinstance(v, types.StringTypes):
+            if not isinstance(v, basestring):
                 raise ValueError('do not set non-stringtype as val: %s' % v)
             self.attrib[k] = kw[k]
 
@@ -766,9 +822,15 @@ class _MeldElementInterface:
             parent = parent.parent
         return L
 
-
-def MeldTreeBuilder():
-    return TreeBuilder(element_factory=_MeldElementInterface)
+class MeldTreeBuilder(TreeBuilder):
+    def __init__(self):
+        TreeBuilder.__init__(self, element_factory=_MeldElementInterface)
+    def comment(self, data):
+        self.start(Comment, {})
+        self.data(data)
+        self.end(Comment)
+    def doctype(self, name, pubid, system):
+        pass
 
 class MeldParser(XMLTreeBuilder):
 
@@ -780,8 +842,9 @@ class MeldParser(XMLTreeBuilder):
 
     def __init__(self, html=0, target=None):
         XMLTreeBuilder.__init__(self, html, target)
-        # assumes ElementTree 1.2.X
-        self._parser.CommentHandler = self.handle_comment
+        if not PY3:
+            # assumes ElementTree 1.2.X
+            self._parser.CommentHandler = self.handle_comment
         self.meldids = {}
 
     def handle_comment(self, data):
@@ -960,7 +1023,7 @@ cdata_needs_escaping = re.compile(r'[&<]').search
 
 def _both_case(mapping):
     # Add equivalent upper-case keys to mapping.
-    lc_keys = mapping.keys()
+    lc_keys = list(mapping.keys())
     for k in lc_keys:
         mapping[k.upper()] = mapping[k]
 
@@ -994,17 +1057,17 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
         if not node.structure:
             if cdata_needs_escaping(text):
                 text = _escape_cdata(text)
-        write(text.encode(encoding))
+        write(encode(text, encoding))
 
     elif tag is Comment:
         if cdata_needs_escaping(text):
             text = _escape_cdata(text)
-        write('<!-- ' + text + ' -->'.encode(encoding))
+        write(encode('<!-- ' + text + ' -->', encoding))
 
     elif tag is ProcessingInstruction:
         if cdata_needs_escaping(text):
             text = _escape_cdata(text)
-        write('<!-- ' + text + ' -->'.encode(encoding))
+        write(encode('<!-- ' + text + ' -->', encoding))
 
     else:
         xmlns_items = [] # new namespaces in this scope
@@ -1019,13 +1082,13 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
         except TypeError:
             _raise_serialization_error(tag)
 
-        to_write += "<%s" % tag.encode(encoding)
+        to_write += "<%s" % encode(tag, encoding)
 
         attrib = node.attrib
 
         if attrib is not None:
             if len(attrib) > 1:
-                attrib_keys = attrib.keys()
+                attrib_keys = list(attrib.keys())
                 attrib_keys.sort()
             else:
                 attrib_keys = attrib
@@ -1036,7 +1099,7 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
                 except TypeError:
                     _raise_serialization_error(k)
                 if k in _HTMLATTRS_BOOLEAN:
-                    to_write += ' ' + k.encode(encoding)
+                    to_write += ' ' + encode(k, encoding)
                 else:
                     v = attrib[k]
                     to_write += " %s=\"%s\"" % (k, v)
@@ -1048,11 +1111,11 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
 
         if text is not None and text:
             if tag in _HTMLTAGS_NOESCAPE:
-                to_write += text.encode(encoding)
+                to_write += encode(text, encoding)
             elif cdata_needs_escaping(text):
                 to_write += _escape_cdata(text)
             else:
-                to_write += text.encode(encoding)
+                to_write += encode(text,encoding)
 
         write(to_write)
 
@@ -1069,13 +1132,13 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
                 _write_html(write, child, encoding, namespaces, depth, maxdepth)
 
         if text or node._children or tag not in _HTMLTAGS_UNBALANCED:
-            write("</" + tag.encode(encoding)  + ">")
+            write("</" + encode(tag, encoding) + ">")
 
     if tail:
         if cdata_needs_escaping(tail):
             write(_escape_cdata(tail))
         else:
-            write(tail.encode(encoding))
+            write(encode(tail,encoding))
 
 def _write_html_no_encoding(write, node, namespaces):
     """ Append HTML to string without any particular unicode encoding.
@@ -1126,7 +1189,7 @@ def _write_html_no_encoding(write, node, namespaces):
 
         if attrib is not None:
             if len(attrib) > 1:
-                attrib_keys = attrib.keys()
+                attrib_keys = list(attrib.keys())
                 attrib_keys.sort()
 
             else:
@@ -1182,7 +1245,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
     elif tag is Replace:
         if node.structure:
             # this may produce invalid xml
-            write(node.text.encode(encoding))
+            write(encode(node.text, encoding))
         else:
             write(_escape_cdata(node.text, encoding))
     else:
@@ -1190,7 +1253,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
             if tag[:_XHTML_PREFIX_LEN] == _XHTML_PREFIX:
                 tag = tag[_XHTML_PREFIX_LEN:]
         if node.attrib:
-            items = node.attrib.items()
+            items = list(node.attrib.items())
         else:
             items = []  # must always be sortable.
         xmlns_items = [] # new namespaces in this scope
@@ -1201,7 +1264,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
                     xmlns_items.append(xmlns)
         except TypeError:
             _raise_serialization_error(tag)
-        write("<" + tag.encode(encoding))
+        write("<" + encode(tag, encoding))
         if items or xmlns_items:
             items.sort() # lexical order
             for k, v in items:
@@ -1218,10 +1281,10 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
                             continue
                 except TypeError:
                     _raise_serialization_error(k)
-                write(" %s=\"%s\"" % (k.encode(encoding),
+                write(" %s=\"%s\"" % (encode(k, encoding),
                                       _escape_attrib(v, encoding)))
             for k, v in xmlns_items:
-                write(" %s=\"%s\"" % (k.encode(encoding),
+                write(" %s=\"%s\"" % (encode(k, encoding),
                                       _escape_attrib(v, encoding)))
         if node.text or node._children:
             write(">")
@@ -1229,7 +1292,7 @@ def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
                 write(_escape_cdata(node.text, encoding))
             for n in node._children:
                 _write_xml(write, n, encoding, namespaces, pipeline, xhtml)
-            write("</" + tag.encode(encoding) + ">")
+            write("</" + encode(tag, encoding) + ">")
         else:
             write(" />")
         for k, v in xmlns_items:
@@ -1246,7 +1309,7 @@ def _escape_cdata(text, encoding=None):
     try:
         if encoding:
             try:
-                text = text.encode(encoding)
+                text = encode(text, encoding)
             except UnicodeError:
                 return _encode_entity(text)
         text = nonentity_re.sub('&amp;', text)
@@ -1260,7 +1323,7 @@ def _escape_attrib(text, encoding=None):
     try:
         if encoding:
             try:
-                text = text.encode(encoding)
+                text = encode(text, encoding)
             except UnicodeError:
                 return _encode_entity(text)
         # don't requote properly-quoted entities

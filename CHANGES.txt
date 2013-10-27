@@ -15,6 +15,8 @@ Next Release
   elementtree is now a requirement for installation.  The test suite
   can now be run with ``python setup.py test``.
 
+  Added compatibility with Python 3 based on work by Scott Maxwell.
+
 0.6.10 (2012-11-27)
 -------------------
 

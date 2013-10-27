@@ -1,4 +1,4 @@
-from meld3 import parse_html
+from .meld3 import parse_html
 import sys
 
 def main(srcfile, tgtfile, out=sys.stdout):

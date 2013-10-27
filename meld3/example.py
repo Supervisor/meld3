@@ -28,7 +28,7 @@ xml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://
   </body>
 </html>
 """
-from meld3 import parse_xmlstring
+from .meld3 import parse_xmlstring
 import sys
 
 def main(out=sys.stdout):
