@@ -41,7 +41,6 @@ except ImportError:
     from xml.etree.ElementTree import QName
     from xml.etree.ElementTree import _raise_serialization_error
     from xml.etree.ElementTree import _namespace_map
-    from xml.etree.ElementTree import XMLParser
     from xml.etree.ElementTree import parse as et_parse
     from xml.etree.ElementTree import ElementPath
 
