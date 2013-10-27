@@ -1767,17 +1767,10 @@ def normalize_xml(s):
     return s
 
 def test_suite():
-    suite = unittest.TestSuite()
-    suite.addTest( unittest.makeSuite( MeldAPITests ) )
-    suite.addTest( unittest.makeSuite( MeldElementInterfaceTests ) )
-    suite.addTest( unittest.makeSuite( ParserTests ) )
-    suite.addTest( unittest.makeSuite( WriterTests) )
-    suite.addTest( unittest.makeSuite( UtilTests) )
-    return suite
+    return unittest.findTestCases(sys.modules[__name__])
 
 def main():
     unittest.main(defaultTest='test_suite')
 
 if __name__ == '__main__':
     main()
-
