@@ -305,7 +305,6 @@ class _MeldElementInterface:
             element.parent = self
 
         self._children[index] = element
-        element.parent = self
 
     # TODO: Can __setslice__ be removed now?
     def __setslice__(self, start, stop, elements):
@@ -329,7 +328,6 @@ class _MeldElementInterface:
             self._children[index].parent = None
 
         ob = self._children[index]
-        ob.parent = None
         del self._children[index]
 
     # TODO: Can __delslice__ be removed now?
