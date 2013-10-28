@@ -421,7 +421,7 @@ class MeldAPITests(unittest.TestCase):
 
         clone = root.clone()
         unfilled = clone.fillmeldhtmlform(**data[2])
-        self.assertEqual(unfilled, ['notthere', 'suffix'])
+        self.assertEqual(sorted(unfilled), ['notthere', 'suffix'])
         self.assertEqual(clone.findmeld('honorific').text, None)
         favoritecolor = clone.findmeld('favorite_color:inputgroup')
         self.assertEqual(favoritecolor[2].attrib['checked'], 'checked')
