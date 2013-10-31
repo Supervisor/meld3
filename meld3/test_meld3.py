@@ -309,11 +309,11 @@ _FILLMELDFORM_HTML = """\
 
 class MeldAPITests(unittest.TestCase):
     def _makeElement(self, string):
-        from .meld3 import parse_xmlstring
+        from . import parse_xmlstring
         return parse_xmlstring(string)
 
     def _makeElementFromHTML(self, string):
-        from .meld3 import parse_htmlstring
+        from . import parse_htmlstring
         return parse_htmlstring(string)
 
     def test_findmeld(self):
@@ -428,7 +428,7 @@ class MeldAPITests(unittest.TestCase):
         self.assertEqual(favoritecolor[1].attrib.get('checked'), None)
 
     def test_replace_removes_all_elements(self):
-        from .meld3 import Replace
+        from . import Replace
         root = self._makeElement(_SIMPLE_XML)
         L = root.findmeld('list')
         L.replace('this is a textual replacement')
@@ -437,7 +437,7 @@ class MeldAPITests(unittest.TestCase):
         self.assertEqual(len(root.getchildren()), 1)
 
     def test_replace_replaces_the_right_element(self):
-        from .meld3 import Replace
+        from . import Replace
         root = self._makeElement(_SIMPLE_XML)
         D = root.findmeld('description')
         D.replace('this is a textual replacement')
@@ -458,7 +458,7 @@ class MeldAPITests(unittest.TestCase):
         self.assertEqual(D.structure, False)
 
     def test_content(self):
-        from .meld3 import Replace
+        from . import Replace
         root = self._makeElement(_SIMPLE_XML)
         D = root.findmeld('description')
         D.content('this is a textual replacement')
@@ -482,7 +482,7 @@ class MeldAPITests(unittest.TestCase):
         self.assertEqual(T.structure, False)
 
     def test_attributes(self):
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
         root = self._makeElement(_COMPLEX_XHTML)
         D = root.findmeld('form1')
         D.attributes(foo='bar', baz='1', g='2', action='#')
@@ -497,7 +497,7 @@ class MeldAPITests(unittest.TestCase):
 
 class MeldElementInterfaceTests(unittest.TestCase):
     def _getTargetClass(self):
-        from .meld3 import _MeldElementInterface
+        from . import _MeldElementInterface
         return _MeldElementInterface
 
     def _makeOne(self, *arg, **kw):
@@ -506,7 +506,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
 
     def test_repeat(self):
         root = self._makeOne('root', {})
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
         item = self._makeOne('item', {_MELD_ID:'item'})
         record = self._makeOne('record', {_MELD_ID:'record'})
         name = self._makeOne('name', {_MELD_ID:'name'})
@@ -551,7 +551,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(replacenode.parent, el)
         self.assertEqual(replacenode.text, 'hello')
         self.assertEqual(replacenode.structure, False)
-        from .meld3 import Replace
+        from . import Replace
         self.assertEqual(replacenode.tag, Replace)
 
     def test_content_simple_structure(self):
@@ -562,23 +562,23 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(replacenode.parent, el)
         self.assertEqual(replacenode.text, 'hello')
         self.assertEqual(replacenode.structure, True)
-        from .meld3 import Replace
+        from . import Replace
         self.assertEqual(replacenode.tag, Replace)
 
     def test_findmeld_simple(self):
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
         el = self._makeOne('div', {_MELD_ID:'thediv'})
         self.assertEqual(el.findmeld('thediv'), el)
 
     def test_findmeld_simple_oneleveldown(self):
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
         el = self._makeOne('div', {_MELD_ID:'thediv'})
         span = self._makeOne('span', {_MELD_ID:'thespan'})
         el.append(span)
         self.assertEqual(el.findmeld('thespan'), span)
 
     def test_findmeld_simple_twolevelsdown(self):
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
         el = self._makeOne('div', {_MELD_ID:'thediv'})
         span = self._makeOne('span', {_MELD_ID:'thespan'})
         a = self._makeOne('a', {_MELD_ID:'thea'})
@@ -752,7 +752,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(len(parent._children), 0)
 
     def test_lineage(self):
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
         div1 = self._makeOne('div', {_MELD_ID:'div1'})
         span1 = self._makeOne('span', {_MELD_ID:'span1'})
         span2 = self._makeOne('span', {_MELD_ID:'span2'})
@@ -809,15 +809,15 @@ class MeldElementInterfaceTests(unittest.TestCase):
         self.assertEqual(r, '<div id="div1"><span><span id="2"></span></span><div2 id="div2"></div2></div>')
 
     def test_shortrepr2(self):
-        from .meld3 import parse_xmlstring
+        from . import parse_xmlstring
         root = parse_xmlstring(_COMPLEX_XHTML)
         r = root.shortrepr()
         self.assertEqual(r, '<html>\n  <head>\n    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">\n     [...]\n</head>\n  <!--  a comment  -->\n   [...]\n</html>')
 
 
     def test_diffmeld1(self):
-        from .meld3 import parse_xmlstring
-        from .meld3 import _MELD_ID
+        from . import parse_xmlstring
+        from . import _MELD_ID
         root = parse_xmlstring(_COMPLEX_XHTML)
         clone = root.clone()
         div = self._makeOne('div', {_MELD_ID:'newdiv'})
@@ -866,7 +866,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
           <b meld:id="b"></b>
         </root>
         """
-        from .meld3 import parse_htmlstring
+        from . import parse_htmlstring
         source_root = parse_htmlstring(source)
         target_root = parse_htmlstring(target)
         changes = source_root.diffmeld(target_root)
@@ -922,7 +922,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
           </d>
         </root>
         """
-        from .meld3 import parse_htmlstring
+        from . import parse_htmlstring
         source_root = parse_htmlstring(source)
         target_root = parse_htmlstring(target)
         changes = source_root.diffmeld(target_root)
@@ -982,7 +982,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
           </p>
         </root>
         """
-        from .meld3 import parse_htmlstring
+        from . import parse_htmlstring
         source_root = parse_htmlstring(source)
         target_root = parse_htmlstring(target)
         changes = source_root.diffmeld(target_root)
@@ -1046,7 +1046,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
           </z>
         </root>
         """
-        from .meld3 import parse_htmlstring
+        from . import parse_htmlstring
         source_root = parse_htmlstring(source)
         target_root = parse_htmlstring(target)
         changes = source_root.diffmeld(target_root)
@@ -1081,17 +1081,17 @@ class MeldElementInterfaceTests(unittest.TestCase):
 
 class ParserTests(unittest.TestCase):
     def _parse(self, *args):
-        from .meld3 import parse_xmlstring
+        from . import parse_xmlstring
         root = parse_xmlstring(*args)
         return root
 
     def _parse_html(self, *args):
-        from .meld3 import parse_htmlstring
+        from . import parse_htmlstring
         root = parse_htmlstring(*args)
         return root
 
     def test_parse_simple_xml(self):
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
         root = self._parse(_SIMPLE_XML)
         self.assertEqual(root.tag, 'root')
         self.assertEqual(root.parent, None)
@@ -1114,7 +1114,7 @@ class ParserTests(unittest.TestCase):
 
     def test_parse_simple_xhtml(self):
         xhtml_ns = '{http://www.w3.org/1999/xhtml}%s'
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
 
         root = self._parse(_SIMPLE_XHTML)
         self.assertEqual(root.tag, xhtml_ns % 'html')
@@ -1127,7 +1127,7 @@ class ParserTests(unittest.TestCase):
 
     def test_parse_complex_xhtml(self):
         xhtml_ns = '{http://www.w3.org/1999/xhtml}%s'
-        from .meld3 import _MELD_ID
+        from . import _MELD_ID
         root = self._parse(_COMPLEX_XHTML)
         self.assertEqual(root.tag, xhtml_ns % 'html')
         self.assertEqual(root.attrib, {})
@@ -1200,8 +1200,8 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(td2.parent, tr)
 
     def test_nvu_html(self):
-        from .meld3 import _MELD_ID
-        from .meld3 import Comment
+        from . import _MELD_ID
+        from . import Comment
         root = self._parse_html(_NVU_HTML)
         self.assertEqual(root.tag, 'html')
         self.assertEqual(root.attrib, {})
@@ -1262,47 +1262,47 @@ class ParserTests(unittest.TestCase):
 class UtilTests(unittest.TestCase):
 
     def test_insert_xhtml_doctype(self):
-        from .meld3 import insert_doctype
+        from . import insert_doctype
         orig = '<root></root>'
         actual = insert_doctype(orig)
         expected = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><root></root>'
         self.assertEqual(actual, expected)
 
     def test_insert_doctype_after_xmldecl(self):
-        from .meld3 import insert_doctype
+        from . import insert_doctype
         orig = '<?xml version="1.0" encoding="latin-1"?><root></root>'
         actual = insert_doctype(orig)
         expected = '<?xml version="1.0" encoding="latin-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><root></root>'
         self.assertEqual(actual, expected)
 
     def test_insert_meld_ns_decl(self):
-        from .meld3 import insert_meld_ns_decl
+        from . import insert_meld_ns_decl
         orig = '<?xml version="1.0" encoding="latin-1"?><root></root>'
         actual = insert_meld_ns_decl(orig)
         expected = '<?xml version="1.0" encoding="latin-1"?><root xmlns:meld="http://www.plope.com/software/meld3"></root>'
         self.assertEqual(actual, expected)
 
     def test_prefeed_preserves_existing_meld_ns(self):
-        from .meld3 import prefeed
+        from . import prefeed
         orig = '<?xml version="1.0" encoding="latin-1"?><root xmlns:meld="#"></root>'
         actual = prefeed(orig)
         expected = '<?xml version="1.0" encoding="latin-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><root xmlns:meld="#"></root>'
         self.assertEqual(actual, expected)
 
     def test_prefeed_preserves_existing_doctype(self):
-        from .meld3 import prefeed
+        from . import prefeed
         orig = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><root xmlns:meld="http://www.plope.com/software/meld3"></root>'
         actual = prefeed(orig)
         self.assertEqual(actual, orig)
 
 class WriterTests(unittest.TestCase):
     def _parse(self, xml):
-        from .meld3 import parse_xmlstring
+        from . import parse_xmlstring
         root = parse_xmlstring(xml)
         return root
 
     def _parse_html(self, xml):
-        from .meld3 import parse_htmlstring
+        from . import parse_htmlstring
         root = parse_htmlstring(xml)
         return root
 
@@ -1544,7 +1544,7 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xml_with_doctype(self):
         root = self._parse(_SIMPLE_XML)
-        from .meld3 import doctype
+        from . import doctype
         actual = self._write_xml(root, doctype=doctype.xhtml)
         expected = """<?xml version="1.0"?>
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><root>
@@ -1559,7 +1559,7 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xml_doctype_nodeclaration(self):
         root = self._parse(_SIMPLE_XML)
-        from .meld3 import doctype
+        from . import doctype
         actual = self._write_xml(root, declaration=False,
                                  doctype=doctype.xhtml)
         expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><root>
@@ -1574,7 +1574,7 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xml_fragment_kills_doctype_and_declaration(self):
         root = self._parse(_SIMPLE_XML)
-        from .meld3 import doctype
+        from . import doctype
         actual = self._write_xml(root, declaration=True,
                                  doctype=doctype.xhtml, fragment=True)
         expected = """<root>
@@ -1601,14 +1601,14 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xhtml_with_doctype(self):
         root = self._parse(_SIMPLE_XHTML)
-        from .meld3 import doctype
+        from . import doctype
         actual = self._write_xhtml(root, doctype=doctype.xhtml)
         expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xhtml_doctype_nodeclaration(self):
         root = self._parse(_SIMPLE_XHTML)
-        from .meld3 import doctype
+        from . import doctype
         actual = self._write_xhtml(root, declaration=False,
                                  doctype=doctype.xhtml)
         expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello!</body></html>"""
@@ -1616,7 +1616,7 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xhtml_fragment_kills_doctype_and_declaration(self):
         root = self._parse(_SIMPLE_XHTML)
-        from .meld3 import doctype
+        from . import doctype
         actual = self._write_xhtml(root, declaration=True,
                                  doctype=doctype.xhtml, fragment=True)
         expected = """<html><body>Hello!</body></html>"""
@@ -1638,7 +1638,7 @@ class WriterTests(unittest.TestCase):
 
     def test_write_simple_xhtml_as_html_new_doctype(self):
         root = self._parse(_SIMPLE_XHTML)
-        from .meld3 import doctype
+        from . import doctype
         actual = self._write_html(root, doctype=doctype.html_strict)
         expected = """
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -1742,22 +1742,22 @@ class WriterTests(unittest.TestCase):
 
     def test_escape_cdata(self):
         a = '< > &lt;&amp; &&apos; && &foo "" http://www.plope.com?foo=bar&bang=baz &#123;'
-        from .meld3 import _escape_cdata
+        from . import _escape_cdata
         self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo "" http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_cdata(a))
 
     def test_escape_cdata_unicodeerror(self):
         a = _u(_b('\x80'))
-        from .meld3 import _escape_cdata
+        from . import _escape_cdata
         self.assertEqual('&#128;', _escape_cdata(a, 'ascii'))
 
     def test_escape_attrib(self):
         a = '< > &lt;&amp; &&apos; && &foo "" http://www.plope.com?foo=bar&bang=baz &#123;'
-        from .meld3 import _escape_attrib
+        from . import _escape_attrib
         self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo &quot;&quot; http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_attrib(a))
 
     def test_escape_attrib_unicodeerror(self):
         a = _u(_b('\x80'))
-        from .meld3 import _escape_attrib
+        from . import _escape_attrib
         self.assertEqual('&#128;', _escape_attrib(a, 'ascii'))
 
 def _b(x):
