@@ -35,11 +35,11 @@ _TARGET_XML = """
 class MeldExampleTests(unittest.TestCase):
     def test_diffs_files_and_outputs_results(self):
         src = tempfile.NamedTemporaryFile()
-        src.write(_SOURCE_XML)
+        src.write(_b(_SOURCE_XML))
         src.flush()
 
         tgt = tempfile.NamedTemporaryFile()
-        tgt.write(_TARGET_XML)
+        tgt.write(_b(_TARGET_XML))
         tgt.flush()
 
         from .melddiff import main
@@ -55,6 +55,13 @@ class MeldExampleTests(unittest.TestCase):
         self.assertTrue("Removed: z, y" in output)
         self.assertTrue("Moved: b" in output)
 
+def _b(x):
+    try:
+        unicode
+    except NameError: #pragma NO COVER Python >= 3.0
+        return bytes(x, 'latin1')
+    else:
+        return x
 
 def test_suite():
     return unittest.findTestCases(sys.modules[__name__])

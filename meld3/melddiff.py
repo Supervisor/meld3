@@ -2,8 +2,15 @@ from .meld3 import parse_html
 import sys
 
 def main(srcfile, tgtfile, out=sys.stdout):
-    srcroot = parse_html(srcfile)
-    tgtroot = parse_html(tgtfile)
+    src = open(srcfile, 'r')
+    tgt = open(tgtfile, 'r')
+    try:
+        srcroot = parse_html(src)
+        tgtroot = parse_html(tgt)
+    finally:
+        src.close()
+        tgt.close()
+
     changes = srcroot.diffmeld(tgtroot)
 
     added = changes['unreduced']['added']
