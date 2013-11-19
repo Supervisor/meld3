@@ -2,24 +2,23 @@ import email
 import re
 import sys
 
-from xml.etree.ElementTree import Comment
-from xml.etree.ElementTree import ElementPath
-from xml.etree.ElementTree import ProcessingInstruction
-from xml.etree.ElementTree import TreeBuilder
-from xml.etree.ElementTree import XMLParser
-from xml.etree.ElementTree import parse as et_parse
-
-from ._compat import PY3
-from ._compat import htmlentitydefs
-from ._compat import HTMLParser
-from ._compat import StringIO
-from ._compat import bytes
-from ._compat import unichr
-from ._compat import _u
-from ._compat import _b
-from ._compat import _raise_serialization_error
-from ._compat import _encode_entity
-from ._compat import fixtag
+from meld3._compat import Comment
+from meld3._compat import ElementPath
+from meld3._compat import ProcessingInstruction
+from meld3._compat import TreeBuilder
+from meld3._compat import XMLParser
+from meld3._compat import et_parse
+from meld3._compat import PY3
+from meld3._compat import htmlentitydefs
+from meld3._compat import HTMLParser
+from meld3._compat import StringIO
+from meld3._compat import bytes
+from meld3._compat import unichr
+from meld3._compat import _u
+from meld3._compat import _b
+from meld3._compat import _raise_serialization_error
+from meld3._compat import _encode_entity
+from meld3._compat import fixtag
 
 AUTOCLOSE = "p", "li", "tr", "th", "td", "head", "body"
 IGNOREEND = "img", "hr", "meta", "link", "br"
