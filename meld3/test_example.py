@@ -1,21 +1,15 @@
-import sys
 import unittest
-
-try:
-    from StringIO import StringIO
-except ImportError: # python 3
-    from io import StringIO
-
-try:
-    from elementtree.ElementTree import fromstring as et_fromstring
-except ImportError: # python 2.5 or later
-    from xml.etree.ElementTree import fromstring as et_fromstring
 
 
 class MeldExampleTests(unittest.TestCase):
     def test_mutates_xml_and_outputs_it(self):
+        from xml.etree.ElementTree import fromstring as et_fromstring
+        try:
+            from io import BytesIO
+        except: # python 2.5
+            from StringIO import StringIO as BytesIO
         from .example import main
-        sio = StringIO()
+        sio = BytesIO()
         main(sio)
 
         output = sio.getvalue()
@@ -50,6 +44,7 @@ class MeldExampleTests(unittest.TestCase):
 
 
 def test_suite():
+    import sys
     return unittest.findTestCases(sys.modules[__name__])
 
 def main():

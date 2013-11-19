@@ -2,11 +2,6 @@ import unittest
 import re
 import sys
 
-try:
-  from StringIO import StringIO
-except: # python 3
-  from io import StringIO
-
 _SIMPLE_XML = r"""<?xml version="1.0"?>
 <root xmlns:meld="http://www.plope.com/software/meld3">
   <list meld:id="list">
@@ -794,6 +789,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
 
 
     def test_shortrepr(self):
+        from ._compat import _b
         div = self._makeOne('div', {'id':'div1'})
         span = self._makeOne('span', {})
         span2 = self._makeOne('span', {'id':'2'})
@@ -806,13 +802,24 @@ class MeldElementInterfaceTests(unittest.TestCase):
         span.append(span2)
         div.append(div2)
         r = div.shortrepr()
-        self.assertEqual(r, '<div id="div1"><span><span id="2"></span></span><div2 id="div2"></div2></div>')
+        self.assertEqual(r,
+            _b('<div id="div1"><span><span id="2"></span></span>'
+               '<div2 id="div2"></div2></div>'))
 
     def test_shortrepr2(self):
         from . import parse_xmlstring
+        from ._compat import _b
         root = parse_xmlstring(_COMPLEX_XHTML)
         r = root.shortrepr()
-        self.assertEqual(r, '<html>\n  <head>\n    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">\n     [...]\n</head>\n  <!--  a comment  -->\n   [...]\n</html>')
+        self.assertEqual(r,
+            _b('<html>\n'
+               '  <head>\n'
+               '    <meta content="text/html; charset=ISO-8859-1" '
+                         'http-equiv="content-type">\n'
+               '     [...]\n</head>\n'
+               '  <!--  a comment  -->\n'
+               '   [...]\n'
+               '</html>'))
 
 
     def test_diffmeld1(self):
@@ -1307,7 +1314,11 @@ class WriterTests(unittest.TestCase):
         return root
 
     def _write(self, fn, **kw):
-        out = StringIO()
+        try:
+            from io import BytesIO
+        except: # python 2.5
+            from StringIO import StringIO as BytesIO
+        out = BytesIO()
         fn(out, **kw)
         out.seek(0)
         actual = out.read()
@@ -1323,13 +1334,15 @@ class WriterTests(unittest.TestCase):
         return self._write(node.write_xhtml, **kw)
 
     def assertNormalizedXMLEqual(self, a, b):
-        a = normalize_xml(a)
-        b = normalize_xml(b)
+        from ._compat import _u
+        a = normalize_xml(_u(a))
+        b = normalize_xml(_u(b))
         self.assertEqual(a, b)
 
     def assertNormalizedHTMLEqual(self, a, b):
-        a = normalize_html(a)
-        b = normalize_html(b)
+        from ._compat import _u
+        a = normalize_xml(_u(a))
+        b = normalize_xml(_u(b))
         self.assertEqual(a, b)
 
     def test_write_simple_xml(self):
@@ -1463,6 +1476,7 @@ class WriterTests(unittest.TestCase):
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_emptytags_html(self):
+        from ._compat import _u
         root = self._parse(_EMPTYTAGS_HTML)
         actual = self._write_html(root)
         expected = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -1472,7 +1486,7 @@ class WriterTests(unittest.TestCase):
     <link><meta><param>
   </body>
 </html>"""
-        self.assertEqual(actual, expected)
+        self.assertEqual(_u(actual), expected)
 
     def test_write_booleanattrs_xhtml_as_html(self):
         root = self._parse(_BOOLEANATTRS_XHTML)
@@ -1741,40 +1755,39 @@ class WriterTests(unittest.TestCase):
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_escape_cdata(self):
-        a = '< > &lt;&amp; &&apos; && &foo "" http://www.plope.com?foo=bar&bang=baz &#123;'
+        from ._compat import _b
         from . import _escape_cdata
-        self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo "" http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_cdata(a))
+        a = ('< > &lt;&amp; &&apos; && &foo "" '
+             'http://www.plope.com?foo=bar&bang=baz &#123;')
+        self.assertEqual(
+            _b('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo "" '
+               'http://www.plope.com?foo=bar&amp;bang=baz &#123;'),
+            _escape_cdata(a))
 
     def test_escape_cdata_unicodeerror(self):
-        a = _u(_b('\x80'))
         from . import _escape_cdata
-        self.assertEqual('&#128;', _escape_cdata(a, 'ascii'))
+        from ._compat import _b
+        from ._compat import _u
+        a = _u(_b('\x80'))
+        self.assertEqual(_b('&#128;'), _escape_cdata(a, 'ascii'))
 
     def test_escape_attrib(self):
-        a = '< > &lt;&amp; &&apos; && &foo "" http://www.plope.com?foo=bar&bang=baz &#123;'
         from . import _escape_attrib
-        self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo &quot;&quot; http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_attrib(a))
+        from ._compat import _b
+        a = ('< > &lt;&amp; &&apos; && &foo "" '
+             'http://www.plope.com?foo=bar&bang=baz &#123;')
+        self.assertEqual(
+            _b('&lt; > &lt;&amp; &amp;&apos; '
+               '&amp;&amp; &amp;foo &quot;&quot; '
+               'http://www.plope.com?foo=bar&amp;bang=baz &#123;'),
+            _escape_attrib(a, None))
 
     def test_escape_attrib_unicodeerror(self):
-        a = _u(_b('\x80'))
         from . import _escape_attrib
-        self.assertEqual('&#128;', _escape_attrib(a, 'ascii'))
-
-def _b(x):
-    try:
-        unicode
-    except NameError: #pragma NO COVER Python >= 3.0
-        return bytes(x, 'latin1')
-    else:
-        return x
-
-def _u(x):
-    try:
-        unicode
-    except NameError: #pragma NO COVER Python >= 3.0
-        return str(x, 'latin1')
-    else:
-        return unicode(x, 'latin1')
+        from ._compat import _b
+        from ._compat import _u
+        a = _u(_b('\x80'))
+        self.assertEqual(_b('&#128;'), _escape_attrib(a, 'ascii'))
 
 def normalize_html(s):
     s = re.sub(r"[ \t]+", " ", s)
