@@ -37,19 +37,6 @@ def Replace(text, structure=False):
     element.structure = structure
     return element
 
-class IO:
-    def __init__(self):
-        self.data = ""
-
-    def write(self, data):
-        self.data += data
-
-    def getvalue(self):
-        return self.data
-
-    def clear(self):
-        self.data = ""
-
 class PyHelper:
     def findmeld(self, node, name, default=None):
         iterator = self.getiterator(node)
