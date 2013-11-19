@@ -1,33 +1,33 @@
-from setuptools import setup, Extension
-import os
+from setuptools import setup
 import sys
 
 py_version = sys.version_info[:2]
-PY3 = py_version[0] == 3
 
-if PY3:
-    if py_version < (3, 2):
+if py_version < (2, 5):
+        raise RuntimeError('On Python 2, meld3 requires Python 2.5 or later')
+elif (3, 0) < py_version < (3, 2):
         raise RuntimeError('On Python 3, meld3 requires Python 3.2 or later')
-else:
-    if py_version < (2, 3):
-        raise RuntimeError('On Python 2, meld3 requires Python 2.3 or later')
 
 install_requires = []
-if sys.version_info[:2] < (2, 5):
-    install_requires.append('elementtree')
 
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Environment :: Web Environment',
     'Intended Audience :: Developers',
     'Operating System :: POSIX',
-    'Programming Language :: Python :: 2 :: Only',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.5',
+    'Programming Language :: Python :: 2.6',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.2',
+    'Programming Language :: Python :: 3.3',
     'Topic :: Text Processing :: Markup :: HTML'
     ]
 
 setup(
     name = 'meld3',
-    version = '0.6.10',
+    version = '1.0.0dev',
     description = 'meld3 is an HTML/XML templating engine.',
     classifiers = CLASSIFIERS,
     author = 'Chris McDonough',
