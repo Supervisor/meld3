@@ -6,7 +6,7 @@ from xml.etree.ElementTree import Comment
 from xml.etree.ElementTree import ElementPath
 from xml.etree.ElementTree import ProcessingInstruction
 from xml.etree.ElementTree import TreeBuilder
-from xml.etree.ElementTree import XMLTreeBuilder
+from xml.etree.ElementTree import XMLParser
 from xml.etree.ElementTree import parse as et_parse
 
 from ._compat import PY3
@@ -720,66 +720,48 @@ class _MeldElementInterface:
 class MeldTreeBuilder(TreeBuilder):
     def __init__(self):
         TreeBuilder.__init__(self, element_factory=_MeldElementInterface)
+        self.meldids = {}
+
+    def start(self, tag, attrs):
+        elem = TreeBuilder.start(self, tag, attrs)
+        for key, value in attrs.items():
+            if key == _MELD_ID:
+                if value in self.meldids:
+                    raise ValueError('Repeated meld id "%s" in source' %
+                                     value)
+                self.meldids[value] = 1
+                break
+        return elem
+
     def comment(self, data):
         self.start(Comment, {})
         self.data(data)
         self.end(Comment)
+
     def doctype(self, name, pubid, system):
         pass
 
-class MeldParser(XMLTreeBuilder):
+if sys.version_info < (2, 7):
+    class MeldParser(XMLParser):
 
-    """ A parser based on Fredrik's PIParser at
-    http://effbot.org/zone/element-pi.htm.  It blithely ignores the
-    case of a comment existing outside the root element and ignores
-    processing instructions entirely.  We need to validate that there
-    are no repeated meld id's in the source as well """
+        """ Based on Fredrik's PIParser[1]
 
-    def __init__(self, html=0, target=None):
-        XMLTreeBuilder.__init__(self, html, target)
-        if not PY3:
-            # assumes ElementTree 1.2.X
+        Blithely ignores the case of a comment existing outside the root
+        element, and ignores processing instructions entirely.
+
+        [1] http://effbot.org/zone/element-pi.htm.
+        """
+        def __init__(self, html=0, target=None):
+            XMLParser.__init__(self, html, target)
             self._parser.CommentHandler = self.handle_comment
-        self.meldids = {}
 
-    def handle_comment(self, data):
-        self._target.start(Comment, {})
-        self._target.data(data)
-        self._target.end(Comment)
-
-    def _start(self, tag, attrib_in):
-        # this is used by self._parser (an Expat parser) as
-        # StartElementHandler but only if _start_list is not
-        # provided... so why does this method exist?
-        for key in attrib_in:
-            if '{' + key == _MELD_ID:
-                meldid = attrib_in[key]
-                if self.meldids.get(meldid):
-                    raise ValueError('Repeated meld id "%s" in source' %
-                                     meldid)
-                self.meldids[meldid] = 1
-        return XMLTreeBuilder._start(self, tag, attrib_in)
-
-    def _start_list(self, tag, attrib_in):
-        # This is used by self._parser (an Expat parser)
-        # as StartElementHandler.  attrib_in is a flat even-length
-        # sequence of name, value pairs for all attributes.
-        # See http://python.org/doc/lib/xmlparser-objects.html
-        for i in range(0, len(attrib_in), 2):
-            # For some reason, clark names are missing the leading '{'
-            attrib = self._fixname(attrib_in[i])
-            if _MELD_ID == attrib:
-                meldid = attrib_in[i+1]
-                if self.meldids.get(meldid):
-                    raise ValueError('Repeated meld id "%s" in source' %
-                                     meldid)
-                self.meldids[meldid] = 1
-        return XMLTreeBuilder._start_list(self, tag, attrib_in)
-
-    def close(self):
-        val = XMLTreeBuilder.close(self)
-        self.meldids = {}
-        return val
+        def handle_comment(self, data):
+            self._target.start(Comment, {})
+            self._target.data(data)
+            self._target.end(Comment)
+else:
+    #just use the stock one
+    MeldParser = XMLParser
 
 class HTMLMeldParser(HTMLParser):
     """ A mostly-cut-and-paste of ElementTree's HTMLTreeBuilder that
