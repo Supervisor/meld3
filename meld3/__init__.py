@@ -7,7 +7,6 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     import html.entities as htmlentitydefs
     from io import StringIO
-    long = int
     basestring = str
     unichr = chr
     class unicode(str):
