@@ -7,7 +7,6 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     import html.entities as htmlentitydefs
     from io import StringIO
-    basestring = str
     unichr = chr
     class unicode(str):
         def __init__(self, string, encoding, errors):
@@ -603,9 +602,9 @@ class _MeldElementInterface:
         """ Set attributes on this node. """
         for k, v in kw.items():
             # prevent this from getting to the parser if possible
-            if not isinstance(k, basestring):
+            if not isinstance(k, str):
                 raise ValueError('do not set non-stringtype as key: %s' % k)
-            if not isinstance(v, basestring):
+            if not isinstance(v, str):
                 raise ValueError('do not set non-stringtype as val: %s' % v)
             self.attrib[k] = kw[k]
 
