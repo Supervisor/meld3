@@ -11,6 +11,10 @@ Next Release
   Profiling scripts that had been used early in meld3 development have
   been removed.
 
+  The example scripts example.py and melddiff.py have been removed.  See
+  README.rst for the same example that was in example.py and the unit tests
+  for examples of the ``diffmeld`` function.
+
   Installation now requires setuptools.  For Python versions before 2.5,
   elementtree is now a requirement for installation.  The test suite
   can now be run with ``python setup.py test``.
