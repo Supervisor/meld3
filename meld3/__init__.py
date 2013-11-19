@@ -661,23 +661,12 @@ class _MeldElementInterface:
         write = data.append
         if encoding is None:
             encoding = 'utf8'
-        if encoding in ('utf8', 'utf-8', 'latin-1', 'latin1',
-                        'ascii'):
-            # optimize for common dumb-American case (only encode once at
-            # the end)
-            if not fragment:
-                if doctype:
-                    _write_doctype(write, doctype)
-            _write_html_no_encoding(write, self, {})
-            joined = ''.join(data)
-            return joined
-        else:
-            if not fragment:
-                if doctype:
-                    _write_doctype(write, doctype)
-            _write_html(write, self, encoding, {})
-            joined = ''.join(data)
-            return joined
+        if not fragment:
+            if doctype:
+                _write_doctype(write, doctype)
+        _write_html(write, self, encoding, {})
+        joined = ''.join(data)
+        return joined
 
     def write_html(self, file, encoding=None, doctype=doctype.html,
                    fragment=False):
@@ -1032,7 +1021,8 @@ _HTMLATTRS_BOOLEAN      = {'selected':1, 'checked':1, 'compact':1, 'declare':1,
 _both_case(_HTMLATTRS_BOOLEAN)
 
 def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
-    " Write HTML to file """
+    """ Walk 'node', calling 'write' with bytes(?).
+    """
     if encoding is None:
         encoding = 'utf-8'
 
@@ -1129,99 +1119,6 @@ def _write_html(write, node, encoding, namespaces, depth=-1, maxdepth=None):
             write(_escape_cdata(tail))
         else:
             write(encode(tail,encoding))
-
-def _write_html_no_encoding(write, node, namespaces):
-    """ Append HTML to string without any particular unicode encoding.
-    We have a separate function for this due to the fact that encoding
-    while recursing is very expensive if this will get serialized out to
-    utf8 anyway (the encoding can happen afterwards).  We append to a string
-    because it's faster than calling any 'write' or 'append' function."""
-
-    tag  = node.tag
-    tail = node.tail
-    text = node.text
-    tail = node.tail
-
-    to_write = ""
-
-    if tag is Replace:
-        if not node.structure:
-            if cdata_needs_escaping(text):
-                text = _escape_cdata_noencoding(text)
-        write(text)
-
-    elif tag is Comment:
-        if cdata_needs_escaping(text):
-            text = _escape_cdata_noencoding(text)
-        write('<!-- ' + text + ' -->')
-
-    elif tag is ProcessingInstruction:
-        if cdata_needs_escaping(text):
-            text = _escape_cdata_noencoding(text)
-        write('<!-- ' + text + ' -->')
-
-    else:
-        xmlns_items = [] # new namespaces in this scope
-        try:
-            if tag[:1] == "{":
-                if tag[:_XHTML_PREFIX_LEN] == _XHTML_PREFIX:
-                    tag = tag[_XHTML_PREFIX_LEN:]
-                else:
-                    tag, xmlns = fixtag(tag, namespaces)
-                    if xmlns:
-                        xmlns_items.append(xmlns)
-        except TypeError:
-            _raise_serialization_error(tag)
-
-        to_write += "<" + tag
-
-        attrib = node.attrib
-
-        if attrib is not None:
-            if len(attrib) > 1:
-                attrib_keys = list(attrib.keys())
-                attrib_keys.sort()
-
-            else:
-                attrib_keys = attrib
-            for k in attrib_keys:
-                try:
-                    if k[:1] == "{":
-                        continue
-                except TypeError:
-                    _raise_serialization_error(k)
-                if k in _HTMLATTRS_BOOLEAN:
-                    to_write += ' ' + k
-                else:
-                    v = attrib[k]
-                    to_write += " %s=\"%s\"" % (k, v)
-
-        for k, v in xmlns_items:
-            to_write += " %s=\"%s\"" % (k, v)
-
-        to_write += ">"
-
-        if text is not None and text:
-            if tag in _HTMLTAGS_NOESCAPE:
-                to_write += text
-            elif cdata_needs_escaping(text):
-                to_write += _escape_cdata_noencoding(text)
-            else:
-                to_write += text
-
-        write(to_write)
-
-        for child in node._children:
-            _write_html_no_encoding(write, child, namespaces)
-
-        if text or node._children or tag not in _HTMLTAGS_UNBALANCED:
-            write("</" + tag  + ">")
-
-    if tail:
-        if cdata_needs_escaping(tail):
-            write(_escape_cdata_noencoding(tail))
-        else:
-            write(tail)
 
 def _write_xml(write, node, encoding, namespaces, pipeline, xhtml=False):
     """ Write XML to a file """
