@@ -29,94 +29,80 @@ else:
     def _u(x, encoding='latin1'):
         return unicode(x, encoding)
 
+from xml.etree.ElementTree import TreeBuilder
+from xml.etree.ElementTree import XMLTreeBuilder
+from xml.etree.ElementTree import Comment
+from xml.etree.ElementTree import ProcessingInstruction
+from xml.etree.ElementTree import QName
+from xml.etree.ElementTree import _raise_serialization_error
+from xml.etree.ElementTree import _namespace_map
+from xml.etree.ElementTree import parse as et_parse
+from xml.etree.ElementTree import ElementPath
+
 try:
-    from elementtree.ElementTree import TreeBuilder
-    from elementtree.ElementTree import XMLTreeBuilder
-    from elementtree.ElementTree import Comment
-    from elementtree.ElementTree import ProcessingInstruction
-    from elementtree.ElementTree import QName
-    from elementtree.ElementTree import _raise_serialization_error
-    from elementtree.ElementTree import _namespace_map
-    from elementtree.ElementTree import _encode_entity
-    from elementtree.ElementTree import fixtag
-    from elementtree.ElementTree import parse as et_parse
-    from elementtree.ElementTree import ElementPath
+    from xml.etree.ElementTree import _encode_entity
 except ImportError:
-    from xml.etree.ElementTree import TreeBuilder
-    from xml.etree.ElementTree import XMLTreeBuilder
-    from xml.etree.ElementTree import Comment
-    from xml.etree.ElementTree import ProcessingInstruction
-    from xml.etree.ElementTree import QName
-    from xml.etree.ElementTree import _raise_serialization_error
-    from xml.etree.ElementTree import _namespace_map
-    from xml.etree.ElementTree import parse as et_parse
-    from xml.etree.ElementTree import ElementPath
+    if PY3:
+        # TODO: this code for python 3 does not have the escape map
+        #       like below, do we need to add it?
+        def _encode_entity(s):
+            return s
 
-    try:
-        from xml.etree.ElementTree import _encode_entity
+    else:  # python 2.7
+        def _encode_entity(text):
+            pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
+            _escape_map = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+            }
 
-    except ImportError:
-        if PY3:
-            # TODO: this code for python 3 does not have the escape map
-            #       like below, do we need to add it?
-            def _encode_entity(s):
-                return s
-
-        else:  # python 2.7
-            def _encode_entity(text):
-                pattern = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
-                _escape_map = {
-                    "&": "&amp;",
-                    "<": "&lt;",
-                    ">": "&gt;",
-                    '"': "&quot;",
-                }
-
-                def _encode(s, encoding):
-                    try:
-                        return s.encode(encoding)
-                    except AttributeError:
-                        return s
-
-                def escape_entities(m, map=_escape_map):
-                    out = []
-                    append = out.append
-                    for char in m.group():
-                        text = map.get(char)
-                        if text is None:
-                            text = "&#%d;" % ord(char)
-                        append(text)
-                    return "".join(out)
-
+            def _encode(s, encoding):
                 try:
-                    return _encode(pattern.sub(escape_entities, text), "ascii")
-                except TypeError:
-                    raise TypeError(
-                        "cannot serialize %r (type %s)" % (text, type(text).__name__)
-                        )
+                    return s.encode(encoding)
+                except AttributeError:
+                    return s
 
-    try:
-        from xml.etree.ElementTree import fixtag
-    except ImportError:  # python 2.7 or python 3
-        def fixtag(tag, namespaces):
-            # given a decorated tag (of the form {uri}tag), return prefixed
-            # tag and namespace declaration, if any
-            if isinstance(tag, QName):
-                tag = tag.text
-            namespace_uri, tag = tag[1:].split("}", 1)
-            prefix = namespaces.get(namespace_uri)
+            def escape_entities(m, map=_escape_map):
+                out = []
+                append = out.append
+                for char in m.group():
+                    text = map.get(char)
+                    if text is None:
+                        text = "&#%d;" % ord(char)
+                    append(text)
+                return "".join(out)
+
+            try:
+                return _encode(pattern.sub(escape_entities, text), "ascii")
+            except TypeError:
+                raise TypeError(
+                    "cannot serialize %r (type %s)" % (text, type(text).__name__)
+                    )
+
+try:
+    from xml.etree.ElementTree import fixtag
+except ImportError:  # python 2.7 or python 3
+    def fixtag(tag, namespaces):
+        # given a decorated tag (of the form {uri}tag), return prefixed
+        # tag and namespace declaration, if any
+        if isinstance(tag, QName):
+            tag = tag.text
+        namespace_uri, tag = tag[1:].split("}", 1)
+        prefix = namespaces.get(namespace_uri)
+        if prefix is None:
+            prefix = _namespace_map.get(namespace_uri)
             if prefix is None:
-                prefix = _namespace_map.get(namespace_uri)
-                if prefix is None:
-                    prefix = "ns%d" % len(namespaces)
-                namespaces[namespace_uri] = prefix
-                if prefix == "xml":
-                    xmlns = None
-                else:
-                    xmlns = ("xmlns:%s" % prefix, namespace_uri)
-            else:
+                prefix = "ns%d" % len(namespaces)
+            namespaces[namespace_uri] = prefix
+            if prefix == "xml":
                 xmlns = None
-            return "%s:%s" % (prefix, tag), xmlns
+            else:
+                xmlns = ("xmlns:%s" % prefix, namespace_uri)
+        else:
+            xmlns = None
+        return "%s:%s" % (prefix, tag), xmlns
 
 
 
