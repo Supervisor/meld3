@@ -4,20 +4,30 @@ import email
 
 PY3 = sys.version_info[0] == 3
 
+try:
+    bytes
+except NameError: # Python 2.5
+    bytes = str
+
 if PY3:
     import html.entities as htmlentitydefs
     from io import StringIO
     unichr = chr
-    class unicode(str):
-        def __init__(self, string, encoding, errors):
-            str.__init__(self, string)
     def encode(text, encoding):
         return text
+    def _b(x, encoding='latin1'):
+        return bytes(x, encoding)
+    def _u(x, encoding='latin1'):
+        return str(x, encoding)
 else:
     import htmlentitydefs
     from StringIO import StringIO
     def encode(text, encoding):
         return text.encode(encoding)
+    def _b(x, encoding='latin1'):
+        return x
+    def _u(x, encoding='latin1'):
+        return unicode(x, encoding)
 
 try:
     from elementtree.ElementTree import TreeBuilder
@@ -943,10 +953,7 @@ class HTMLMeldParser(HTMLParser):
             char = int(char[1:], 16)
         else:
             char = int(char)
-        if 0 <= char < 128:
-            self.builder.data(chr(char))
-        else:
-            self.builder.data(unichr(char))
+        self.builder.data(unichr(char))
 
     def handle_entityref(self, name):
         entity = htmlentitydefs.entitydefs.get(name)
@@ -955,17 +962,13 @@ class HTMLMeldParser(HTMLParser):
                 entity = ord(entity)
             else:
                 entity = int(entity[2:-1])
-            if 0 <= entity < 128:
-                self.builder.data(chr(entity))
-            else:
-                self.builder.data(unichr(entity))
+            self.builder.data(unichr(entity))
         else:
             self.unknown_entityref(name)
 
     def handle_data(self, data):
-        if isinstance(data, type('')) and is_not_ascii(data):
-            # convert to unicode, but only if necessary
-            data = unicode(data, self.encoding, "ignore")
+        if isinstance(data, bytes):
+            data = _u(data, self.encoding)
         self.builder.data(data)
 
     def unknown_entityref(self, name):
