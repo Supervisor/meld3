@@ -1,5 +1,5 @@
-Next Release
-------------
+1.0.0 (Next Release)
+--------------------
 
   The optional C extension has been removed.  It was only used internally
   by meld3, was not enabled by default, and did not support all meld3
@@ -14,6 +14,9 @@ Next Release
   The example scripts example.py and melddiff.py have been removed.  See
   README.rst for the same example that was in example.py and the unit tests
   for examples of the ``diffmeld`` function.
+
+  Support for using meld3 directly from the command line with
+  ``python meld3.py <file> <mutator>`` has been removed.
 
   Installation now requires setuptools.  For Python versions before 2.5,
   elementtree is now a requirement for installation.  The test suite
