@@ -1746,8 +1746,8 @@ class WriterTests(unittest.TestCase):
         self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo "" http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_cdata(a))
 
     def test_escape_cdata_unicodeerror(self):
-        from . import _b
-        from . import _u
+        from ._compat import _b
+        from ._compat import _u
         a = _u(_b('\x80'))
         from . import _escape_cdata
         self.assertEqual('&#128;', _escape_cdata(a, 'ascii'))
@@ -1758,8 +1758,8 @@ class WriterTests(unittest.TestCase):
         self.assertEqual('&lt; > &lt;&amp; &amp;&apos; &amp;&amp; &amp;foo &quot;&quot; http://www.plope.com?foo=bar&amp;bang=baz &#123;', _escape_attrib(a))
 
     def test_escape_attrib_unicodeerror(self):
-        from . import _b
-        from . import _u
+        from ._compat import _b
+        from ._compat import _u
         a = _u(_b('\x80'))
         from . import _escape_attrib
         self.assertEqual('&#128;', _escape_attrib(a, 'ascii'))
