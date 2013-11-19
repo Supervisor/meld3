@@ -1,7 +1,6 @@
 import re
 import sys
 PY3 = sys.version_info[0] == 3
-from xml.etree.ElementTree import QName
 
 try:
     import html.entities as htmlentitydefs
@@ -46,6 +45,23 @@ else:               # Python 2.x
         # x shoulr be a str literal
         return unicode(x, encoding)
 
+try:
+    from xml.etree.ElementTree import Comment
+    from xml.etree.ElementTree import ElementPath
+    from xml.etree.ElementTree import ProcessingInstruction
+    from xml.etree.ElementTree import QName
+    from xml.etree.ElementTree import TreeBuilder
+    from xml.etree.ElementTree import XMLParser
+    from xml.etree.ElementTree import parse as et_parse
+except ImportError:     # Python 2.4
+    from elementtree.ElementTree import Comment
+    from elementtree.ElementTree import ElementPath
+    from elementtree.ElementTree import ProcessingInstruction
+    from elementtree.ElementTree import QName
+    from elementtree.ElementTree import TreeBuilder
+    from elementtree.ElementTree import XMLTreeBuilder as XMLParser
+    from elementtree.ElementTree import parse as et_parse
+ 
 #-----------------------------------------------------------------------------
 # Begin fork from Python 2.6.8 stdlib:
 #       - xml.elementtree.ElementTree._raise_serialization_error
