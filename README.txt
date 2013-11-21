@@ -17,9 +17,9 @@ Overview
 
 Requirements
 
-  Python 2.3+
+  On Python 3, meld3 requires Python 3.2 or later.
 
-  ElementTree 1.2+ (http://effbot.org/downloads/#elementtree)
+  On Python 2, meld3 requires Python 2.5 or later.
 
 Installation
 
