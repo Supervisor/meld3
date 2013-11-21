@@ -1,34 +1,37 @@
 1.0.0 (Next Release)
 --------------------
 
-  The optional C extension has been removed.  It was only used internally
+- Dropped support for Python 2.3 / 2.4.  Users of those Python versions
+  should pin to earlier releases, (e.g., "meld3<1.0.0dev").
+
+- The optional C extension has been removed.  It was only used internally
   by meld3, was not enabled by default, and did not support all meld3
   features.  The pure Python version has very acceptable performance.
 
-  The license has been changed from ZPL 2.1 to the BSD-derived Repoze
+- The license has been changed from ZPL 2.1 to the BSD-derived Repoze
   license, which is the same license used by Supervisor.
 
-  Profiling scripts that had been used early in meld3 development have
+- Profiling scripts that had been used early in meld3 development have
   been removed.
 
-  The example scripts example.py and melddiff.py have been removed.  See
+- The example scripts example.py and melddiff.py have been removed.  See
   README.rst for the same example that was in example.py and the unit tests
   for examples of the ``diffmeld`` function.
 
-  Support for using meld3 directly from the command line with
+- Support for using meld3 directly from the command line with
   ``python meld3.py <file> <mutator>`` has been removed.
 
-  Installation now requires setuptools.  For Python versions before 2.5,
+- Installation now requires setuptools.  For Python versions before 2.5,
   elementtree is now a requirement for installation.  The test suite
   can now be run with ``python setup.py test``.
 
-  Added compatibility with Python 3.2 and 3.3.  Thanks to Scott Maxwell
+- Added compatibility with Python 3.2 and 3.3.  Thanks to Scott Maxwell
   and Tres Seaver for contributing the patches.
 
 0.6.10 (2012-11-27)
 -------------------
 
-  Fixed a bug where an exception could be raised when escaping certain
+- Fixed a bug where an exception could be raised when escaping certain
   attribute or cdata values.  This was caused by meld3 trying to use
   _encode_entity from xml.etree without importing it first.  Thanks to
   Jorge Puente Sarrin for contributing the patch.
@@ -36,39 +39,39 @@
 0.6.9 (2012-09-12)
 ------------------
 
-  Fixed a test failure that only occurred on some builds of
+- Fixed a test failure that only occurred on some builds of
   Python 2.7 where parsing an unknown entity could raise
   an expat.error instead of SyntaxError.
 
 0.6.8 (2012-01-12)
 ------------------
 
-  Added the C extension source (cmeld3.c) to the release package
+- Added the C extension source (cmeld3.c) to the release package
   by including it in MANIFEST.in.  Thanks to Soren Hansen for
   noticing it was missing from prior releases.
 
-  Running setup.py will now halt on error if a compatible version
+- Running setup.py will now halt on error if a compatible version
   of Python is not detected.
 
 0.6.7 (2010-08-04)
 ------------------
 
-  Make compatible with Python 2.7 (patch kindly contributed by
+- Make compatible with Python 2.7 (patch kindly contributed by
   Jonathan Riboux).
 
 0.6.6 (2009-09-30)
 ------------------
 
-  Change download location.  This really should be a setuptools
+- Change download location.  This really should be a setuptools
   package so we can upload it to PyPI.  No functionality changes.
 
 0.6.5 (2008-07-21)
 ------------------
 
-  Apply patch for Python 2.5 compatibility from both
+- Apply patch for Python 2.5 compatibility from both
   Toshio and Anders.
 
-  Create distro tarball via:
+- Create distro tarball via:
 
    rm MANIFEST
    USE_MELD3_EXTENSION_MODULES=1 python setup.py sdist
@@ -78,7 +81,7 @@
 0.6.4 (2008-01-17)
 ------------------
 
-  Make the default build use the Python-based meld "helper" instead of
+- Make the default build use the Python-based meld "helper" instead of
   the C-based one.  Since the primary consumer of meld3 (as far as I
   know) is "supervisor", and since the typical supervisor consumer is
   likely not to have a C compiler and Python development libraries on
@@ -95,20 +98,20 @@
 0.6.3 (2007-08-25)
 ------------------
 
-  Fixed two more memory leaks (one in bfclonehandler, the other in
+- Fixed two more memory leaks (one in bfclonehandler, the other in
   findmeldhandler) in the c helper module.
 
 0.6.2 (2007-08-23)
 ------------------
 
-  Fixed a number of memory leaks in the C implementation of the helper
+- Fixed a number of memory leaks in the C implementation of the helper
   module.  Any use of "findmeld", "clone", "getiterator", or "content"
   previously leaked references.
 
 0.6.1 (2007-08-21)
 ------------------
 
-  Allow people to install meld3 without building extension modules.
+- Allow people to install meld3 without building extension modules.
   If the environment variable "NO_MELD3_EXTENSION_MODULES" is set, the
   meld3 setup.py file will not build any extension modules.  meld3
   will still work, only more slowly than if the extension modules
@@ -117,18 +120,18 @@
 0.6 (2006-09-18)
 ----------------
 
-  Fixed crashbug when repeating trees with "structure" nodes in them.
+- Fixed crashbug when repeating trees with "structure" nodes in them.
   Symptom: bus error.  Thanks to Terrence Brannon for the report.
 
 0.5 (2006-02-19)
 ----------------
 
-  Add 'fillmeldhtmlform' method to nodes.
+- Add 'fillmeldhtmlform' method to nodes.
 
-  Fix obscure parsing bug that arose when attempting to change the
+- Fix obscure parsing bug that arose when attempting to change the
   URI used as a "meld id" (do not lowercase).
 
-  Added three methods to element nodes:
+- Added three methods to element nodes:
 
     write_htmlstring
     write_xmlstring
@@ -139,7 +142,7 @@
   Instead of writing to a file, they return a string containing the
   renderering of the element.
 
-  You can now use the meld3.py module to interactively try out
+- You can now use the meld3.py module to interactively try out
   different renderings.  To do this, invoke meld3.py with a filename
   and a dotted-python-path name to a mutator function that accepts a
   single argument (the root element), e.g.:
@@ -148,14 +151,14 @@
 
   The rendering will be sent to stdout
 
-  Remove unused parse method.
+- Remove unused parse method.
 
-  Add __setslice__, __delslice__, remove methods that correctly update
+- Add __setslice__, __delslice__, remove methods that correctly update
   parent pointers.
 
-  Don't call into superclass to do append, insert, __setitem__, etc.
+- Don't call into superclass to do append, insert, __setitem__, etc.
 
-  Internal speedups:
+- Internal speedups:
 
     - Avoid function call overhead in various places by inlining code.
 
@@ -177,17 +180,17 @@
       "import cmeld3 as helper" in meld3.py to something like "import
       wontbehere".
 
-  Fix text and attribute serialization to only quote ampersands that
+- Fix text and attribute serialization to only quote ampersands that
   aren't already part of entities.
 
-  Do the minimal possible thing to escape text and attribute values during
+- Do the minimal possible thing to escape text and attribute values during
   rendering.  For text, this is escaping ampersands that aren't parts of
   entities and the less-than (<) character.  For attribute values, this is
   amps and less-than as well as the quote (") character.  This was done
   partly because I think the spec allows it but it's also what Kid does,
   shrug.
 
-  Change 'diffmeld()' to return a dictionary of dictionaries.  The
+- Change 'diffmeld()' to return a dictionary of dictionaries.  The
   dictionary returned by diffmeld has the keys 'reduced' and
   'unreduced'.  the values of both 'reduced' and 'unreduced' is
   another dictionary.  The leafmost dictionary has the keys 'added',
@@ -197,76 +200,76 @@
   the added, removed, and moved values are reduced to the smallest
   number of tags which share a common lineage.
 
-  Add a meldprofile.py script.
+- Add a meldprofile.py script.
 
 0.4 (2006-01-01)
 ----------------
 
-  The clone() method of elements copied neither the text nor the tail
+- The clone() method of elements copied neither the text nor the tail
   of the element (this is what caused markup created by "repeats" to
   fall all on one line).
 
-  Add diffing capability to meld nodes.  The file 'melddiff.py' shows an
+- Add diffing capability to meld nodes.  The file 'melddiff.py' shows an
   example of using the diff API.
 
-  Add a 'meldid()' method to elements.  This returns None if the element
+- Add a 'meldid()' method to elements.  This returns None if the element
   has no meld id, otherwise it returns the id.
 
-  Add a 'fillmeld(**kw)' method to elements.  This does the same thing
+- Add a 'fillmeld(**kw)' method to elements.  This does the same thing
   as '__mod__' but returns meld ids (the keys of **kw) that cannot be
   found anywhere in the tree.
 
-  Make source distro into a distutils-installable package.
+- Make source distro into a distutils-installable package.
 
 0.3 (2005-12-26)
 ----------------
 
-  Fix broken example.py file.
+- Fix broken example.py file.
 
-  Add ZPT-alike methods on elements: 'content', 'replace', and
+- Add ZPT-alike methods on elements: 'content', 'replace', and
   'attributes'.  'content' replaces the node's content; 'replace'
   replaces the node itself with a text value, and 'attributes' sets
   the attributes of the node.  Using the ElementTree API to do the
   same things usually causes the code to run faster, but these
   functions are more convenient and more easily grokked by ZPT people.
 
-  Override __delitem__ on meld elements in order to relieve deleted
+- Override __delitem__ on meld elements in order to relieve deleted
   items of their parent pointers.
 
-  Strip all xhtml namespace identifiers out of XHTML output.  Browsers
+- Strip all xhtml namespace identifiers out of XHTML output.  Browsers
   just can't deal with this.
 
-  Undocumented element API method 'remove' renamed to 'deparent' (it
+- Undocumented element API method 'remove' renamed to 'deparent' (it
   was shadowing an ElementTree API method).
 
-  Documentation improvements and change examples to use ZPT-alike
+- Documentation improvements and change examples to use ZPT-alike
   methods.
 
-  Add support for HTML input files.  Input files don't need to be
+- Add support for HTML input files.  Input files don't need to be
   strictly well-formed XML anymore.
 
-  Remove the 'parse' top-level function in favor of explicit separate
+- Remove the 'parse' top-level function in favor of explicit separate
   xml parsing and html parsing functions.
 
-  Add 'parse_xml' and 'parse_html' top-level parsing functions.
+- Add 'parse_xml' and 'parse_html' top-level parsing functions.
 
-  Add 'parse_xmlstring' and 'parse_htmlstring' module-scope functions
+- Add 'parse_xmlstring' and 'parse_htmlstring' module-scope functions
   which calls their respective 'parse_xxx' function with a StringIO
   containing the passed text.
 
 0.2 (2005-12-24)
 ----------------
 
-  Use a method on elements to do writing rather than requiring a user
+- Use a method on elements to do writing rather than requiring a user
   call a "write" function.  The equivalent is now a method of the
   element named "write_xml".  element.write_xml(file) performs a write
   of XML into the file.  element.write_xml(...) includes an XML
   declaration in its serialization (but no doctype, at least by
   default).
 
-  Various non-XML serialization methods have been added.  The default
+- Various non-XML serialization methods have been added.  The default
   arguments of these serialization methods are what I'm guessing are
-  the most common cases desired for various kinds of qoutput::
+  the most common cases desired for various kinds of output::
 
      element.write_html(...).  This serializes the node and its
      children to HTML.  This feature was inspired by and based on code
@@ -294,7 +297,7 @@
      default.  If you want to serialize an XML declaration, pass
      'declaration=True'.
 
-  All serialization methods have a number of optional
+- All serialization methods have a number of optional
   arguments::
 
      fragment: If this is true, serialize an element as a "fragment".
@@ -318,7 +321,7 @@
      included in the declaration but the serialization will be done
      with utf-8.
 
-  XML serializations (write_xml and write_xhtml) have the
+- XML serializations (write_xml and write_xhtml) have the
   aforementioned arguments but expose two additional optional
   arguments::
 
@@ -337,7 +340,7 @@
      write_xhtml).  meld identifiers cannot be preserved on HTML
      serializations because HTML doesn't understand namespaces.
 
-  HTML entities can now be parsed properly (magically) when a DOCTYPE
+- HTML entities can now be parsed properly (magically) when a DOCTYPE
   is not supplied in the source of the XML passed to 'parse'.  If your
   source document does not contain a DOCTYPE declaration, the DOCTYPE
   is set to 'loose' XHTML 'by magic'.  If your source document does
@@ -349,15 +352,15 @@
   any *non*-HTML entity can be parsed in the input stream under any
   circumstance without having it defined it in your source document.
 
-  Comments are now preserved in output.  They are also present in the
+- Comments are now preserved in output.  They are also present in the
   ElementTree node tree (as Comment elements), so beware. Processing
   instructions (e.g. <?xml version="1.0">) are completely thrown away
   at parse time and do not exist anywhere in the element tree.
 
-  Avoid use of deepcopy in the clone() method of elements (much
+- Avoid use of deepcopy in the clone() method of elements (much
   speedier to explicitly recurse).
 
-  The "meld helper" namespace (e.g. element.meld) is no longer present
+- The "meld helper" namespace (e.g. element.meld) is no longer present
   or supported.  Instead of using element.meld['foo'] to find an
   element with the meld:id "foo", use element.findmeld('foo').  This
   returns None if the node cannot be found.  Instead of using
@@ -365,7 +368,7 @@
   'somedefault').  Instead of using element.meld.repeat(...), use
   element.repeat(...).
 
-  Elements now support a __mod__ which can accept a dictionarylike
+- Elements now support a __mod__ which can accept a dictionarylike
   operand and which causes the text of elements with meld ids which
   match the keys in the dictionary to be set to the key's value in the
   dictionary.  For example, if an element contains subelements with
@@ -374,17 +377,17 @@
 
     element % {'foo':'foo text', 'bar':'bar text'}
 
-  __mod__ will not accept a non-dictionary-like object (such as a list
+- __mod__ will not accept a non-dictionary-like object (such as a list
   or tuple).  __mod__ will never raise an error unless you pass it a
   non-dictionary-like object; if it can't find a node corresponding to
   a key in the dictionary, it moves on to the next key.  Only the text
   values of the nodes which are found during this process are
   replaced.
 
-  Using duplicate meld identifiers on separate elements in the document
+- Using duplicate meld identifiers on separate elements in the document
   now causes a ValueError to be raised at parse time.
 
 0.1 (2005-12-18)
 ----------------
 
-   Initial release.
+- Initial release.
