@@ -106,3 +106,5 @@ Contributors
 - Chris McDonough, 2005-12-18
 
 - Tres Seaver, 2006-02-09
+
+- Jorge Puente Sarrín, 2012-11-27
