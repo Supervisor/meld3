@@ -4,6 +4,13 @@
 - Dropped support for Python 2.3 / 2.4.  Users of those Python versions
   should pin to earlier releases, (e.g., "meld3<1.0.0dev").
 
+- Added compatibility with Python 3.2 and 3.3.  Thanks to Scott Maxwell
+  and Tres Seaver for contributing the patches.
+
+- Installation now requires setuptools.  For Python versions before 2.5,
+  elementtree is now a requirement for installation.  The test suite
+  can now be run with ``python setup.py test``.
+
 - The optional C extension has been removed.  It was only used internally
   by meld3, was not enabled by default, and did not support all meld3
   features.  The pure Python version has very acceptable performance.
@@ -20,13 +27,6 @@
 
 - Support for using meld3 directly from the command line with
   ``python meld3.py <file> <mutator>`` has been removed.
-
-- Installation now requires setuptools.  For Python versions before 2.5,
-  elementtree is now a requirement for installation.  The test suite
-  can now be run with ``python setup.py test``.
-
-- Added compatibility with Python 3.2 and 3.3.  Thanks to Scott Maxwell
-  and Tres Seaver for contributing the patches.
 
 0.6.10 (2012-11-27)
 -------------------
