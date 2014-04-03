@@ -4,9 +4,9 @@ import sys
 py_version = sys.version_info[:2]
 
 if py_version < (2, 5):
-        raise RuntimeError('On Python 2, meld3 requires Python 2.5 or later')
+    raise RuntimeError('On Python 2, meld3 requires Python 2.5 or later')
 elif (3, 0) < py_version < (3, 2):
-        raise RuntimeError('On Python 3, meld3 requires Python 3.2 or later')
+    raise RuntimeError('On Python 3, meld3 requires Python 3.2 or later')
 
 install_requires = []
 
