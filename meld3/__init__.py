@@ -774,7 +774,13 @@ class HTMLMeldParser(HTMLParser):
             builder = MeldTreeBuilder()
         self.builder = builder
         self.encoding = encoding or "iso-8859-1"
-        HTMLParser.__init__(self)
+        try:
+            # ``convert_charrefs`` was added in Python 3.4.  Set it to avoid
+            # "DeprecationWarning: The value of convert_charrefs will become
+            # True in 3.5. You are encouraged to set the value explicitly."
+            HTMLParser.__init__(self, convert_charrefs=False)
+        except TypeError:
+            HTMLParser.__init__(self)
         self.meldids = {}
 
     def close(self):
