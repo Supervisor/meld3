@@ -2,7 +2,7 @@ meld3
 
 Overview
 
-  meld3 is an HTML/XML templating system for Python 2.3+ which keeps
+  meld3 is an HTML/XML templating system for Python which keeps
   template markup and dynamic rendering logic separate from one
   another.  See http://www.entrian.com/PyMeld for a treatise on the
   benefits of this pattern.
