@@ -7,9 +7,7 @@
 - Added compatibility with Python 3.2, 3.3, and 3.4.  Thanks to Scott
   Maxwell and Tres Seaver for contributing the patches.
 
-- Installation now requires setuptools.  For Python versions before 2.5,
-  elementtree is now a requirement for installation.  The test suite
-  can now be run with ``python setup.py test``.
+- Installation now requires setuptools.
 
 - The optional C extension has been removed.  It was only used internally
   by meld3, was not enabled by default, and did not support all meld3
