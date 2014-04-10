@@ -1,5 +1,5 @@
-1.0.0 (Next Release)
---------------------
+1.0.0 (2014-04-10)
+------------------
 
 - Dropped support for Python 2.3 / 2.4.  Users of those Python versions
   should pin to earlier releases, (e.g., "meld3<1.0.0dev").
