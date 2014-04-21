@@ -480,10 +480,10 @@ class MeldAPITests(unittest.TestCase):
         from . import _MELD_ID
         root = self._makeElement(_COMPLEX_XHTML)
         D = root.findmeld('form1')
-        D.attributes(foo='bar', baz='1', g='2', action='#')
+        D.attributes(foo='bar', baz='1', g='2', action=u'#')
         self.assertEqual(D.attrib, {
             'foo':'bar', 'baz':'1', 'g':'2',
-            'method':'POST', 'action':'#',
+            'method':'POST', 'action':u'#',
             _MELD_ID: 'form1'})
 
     def test_attributes_nonstringtype_raises(self):
