@@ -30,20 +30,20 @@ try:
 except NameError:   # Python 3.x
     unichr = chr
     def _b(x, encoding='latin1'):
-        # x shoulr be a str literal
+        # x should be a str literal
         return bytes(x, encoding)
     def _u(x, encoding='latin1'):
-        # x shoulr be a str literal
+        # x should be a str literal
         if isinstance(x, str):
             return x
         return str(x, encoding)
 
 else:               # Python 2.x
     def _b(x, encoding='latin1'):
-        # x shoulr be a str literal
+        # x should be a str literal
         return x
     def _u(x, encoding='latin1'):
-        # x shoulr be a str literal
+        # x should be a str literal
         return unicode(x, encoding)
 
 #-----------------------------------------------------------------------------
