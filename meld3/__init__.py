@@ -105,7 +105,13 @@ class PyHelper:
         element.structure = node.structure
         element.parent = parent
         if parent is not None:
-            parent._children.append(element)
+            # Attempt to insert just after the node being cloned
+            for pos, ele in enumerate(parent._children):
+                if ele == node:
+                    parent._children.insert(pos + 1, element)
+                    break
+            else:
+                parent._children.append(element)
         if node._children:
             self._bfclone(node._children, element)
         return element
