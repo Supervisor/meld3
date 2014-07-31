@@ -107,7 +107,7 @@ class PyHelper:
         if parent is not None:
             # Attempt to insert just after the node being cloned
             for pos, ele in enumerate(parent._children):
-                if ele == node:
+                if ele is node:
                     parent._children.insert(pos + 1, element)
                     break
             else:
