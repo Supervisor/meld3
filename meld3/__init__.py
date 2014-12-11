@@ -499,6 +499,7 @@ class _MeldElementInterface:
                 clone = helper.bfclone(element, parent)
             L.append((clone, thing))
             first = False
+            element = clone  # So next item goes after
         return L
 
     def replace(self, text, structure=False):
