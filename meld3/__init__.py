@@ -1132,7 +1132,10 @@ def _escape_attrib(text, encoding):
         encoded = encoded.replace(_QUOTE, _QUOTE_ESCAPED)
         return encoded
     except (TypeError, AttributeError):
-        _raise_serialization_error(text)
+        if text is None:
+            return ''
+        else:
+            _raise_serialization_error(text)
 
 # utility functions
 
