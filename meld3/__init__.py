@@ -20,6 +20,7 @@ from ._compat import _b
 from ._compat import _raise_serialization_error
 from ._compat import _encode_entity
 from ._compat import fixtag
+from ._compat import string_types
 
 AUTOCLOSE = "p", "li", "tr", "th", "td", "head", "body"
 IGNOREEND = "img", "hr", "meta", "link", "br"
@@ -521,9 +522,9 @@ class _MeldElementInterface:
         """ Set attributes on this node. """
         for k, v in kw.items():
             # prevent this from getting to the parser if possible
-            if not isinstance(k, str):
+            if not isinstance(k, string_types):
                 raise ValueError('do not set non-stringtype as key: %s' % k)
-            if not isinstance(v, str):
+            if not isinstance(v, string_types):
                 raise ValueError('do not set non-stringtype as val: %s' % v)
             self.attrib[k] = kw[k]
 
@@ -1131,7 +1132,10 @@ def _escape_attrib(text, encoding):
         encoded = encoded.replace(_QUOTE, _QUOTE_ESCAPED)
         return encoded
     except (TypeError, AttributeError):
-        _raise_serialization_error(text)
+        if text is None:
+            return ''
+        else:
+            _raise_serialization_error(text)
 
 # utility functions
 

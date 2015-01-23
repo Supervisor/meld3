@@ -45,6 +45,12 @@ else:               # Python 2.x
     def _u(x, encoding='latin1'):
         # x should be a str literal
         return unicode(x, encoding)
+try:
+    from types import StringTypes
+    string_types = StringTypes
+
+except ImportError:  # Python 3.x
+    string_types = str
 
 #-----------------------------------------------------------------------------
 # Begin fork from Python 2.6.8 stdlib:
