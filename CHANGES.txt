@@ -1,3 +1,10 @@
+Next Release
+------------
+
+- Fixed a bug introduced in 1.0.0 where unicode strings could not be used
+  as attribute values.  Thanks to Terrence Brannon for reporting the issue
+  and supplying the initial patch.
+
 1.0.0 (2014-04-10)
 ------------------
 

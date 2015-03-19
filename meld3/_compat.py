@@ -46,6 +46,11 @@ else:               # Python 2.x
         # x should be a str literal
         return unicode(x, encoding)
 
+try:
+    from types import StringTypes
+except ImportError: # Python 3.x
+    StringTypes = (str,)
+
 #-----------------------------------------------------------------------------
 # Begin fork from Python 2.6.8 stdlib:
 #       - xml.elementtree.ElementTree._raise_serialization_error

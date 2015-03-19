@@ -486,6 +486,17 @@ class MeldAPITests(unittest.TestCase):
             'method':'POST', 'action':'#',
             _MELD_ID: 'form1'})
 
+    def test_attributes_unicode(self):
+        from . import _MELD_ID
+        from ._compat import _u
+        root = self._makeElement(_COMPLEX_XHTML)
+        D = root.findmeld('form1')
+        D.attributes(foo=_u('bar'), action=_u('#'))
+        self.assertEqual(D.attrib, {
+            'foo':_u('bar'),
+            'method':'POST', 'action': _u('#'),
+            _MELD_ID: 'form1'})
+
     def test_attributes_nonstringtype_raises(self):
         root = self._makeElement('<root></root>')
         self.assertRaises(ValueError, root.attributes, foo=1)

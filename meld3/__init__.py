@@ -13,6 +13,7 @@ from ._compat import PY3
 from ._compat import htmlentitydefs
 from ._compat import HTMLParser
 from ._compat import StringIO
+from ._compat import StringTypes
 from ._compat import bytes
 from ._compat import unichr
 from ._compat import _u
@@ -521,9 +522,9 @@ class _MeldElementInterface:
         """ Set attributes on this node. """
         for k, v in kw.items():
             # prevent this from getting to the parser if possible
-            if not isinstance(k, str):
+            if not isinstance(k, StringTypes):
                 raise ValueError('do not set non-stringtype as key: %s' % k)
-            if not isinstance(v, str):
+            if not isinstance(v, StringTypes):
                 raise ValueError('do not set non-stringtype as val: %s' % v)
             self.attrib[k] = kw[k]
 
