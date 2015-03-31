@@ -5,6 +5,9 @@ Next Release
   as attribute values.  Thanks to Terrence Brannon for reporting the issue
   and supplying the initial patch.
 
+- A ``setup.cfg`` file has been added with a ``[bdist_wheel]`` section to
+  mark this package as a universal wheel.
+
 1.0.0 (2014-04-10)
 ------------------
 
