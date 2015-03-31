@@ -1,5 +1,5 @@
-Next Release
-------------
+1.0.1 (2015-03-31)
+------------------
 
 - Fixed a bug introduced in 1.0.0 where unicode strings could not be used
   as attribute values.  Thanks to Terrence Brannon for reporting the issue
