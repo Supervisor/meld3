@@ -1,5 +1,8 @@
-Next Release
-------------
+1.0.2 (2015-03-31)
+------------------
+
+- Released to fix an issue where the universal wheel was tagged on PyPI
+  as Py Version "2.7" instead of "py2.py3".
 
 1.0.1 (2015-03-31)
 ------------------
