@@ -62,7 +62,7 @@ Differences from PyMeld
     attributes.  If you wish to preserve meld3 ids (for instance, in
     order to do pipelining of meld3 templates), you can preserve meld
     ids by passing a "pipeline" option to a "write" function
-    (e.g. write_xml, wwrite_xhtml).
+    (e.g. write_xml, write_xhtml).
 
   - Output can be performed in "XML mode", "XHTML mode" and "HTML
     mode".  HTML output follows recommendations for HTML 4.01, while
