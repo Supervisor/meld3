@@ -338,6 +338,22 @@ class MeldAPITests(unittest.TestCase):
         self.assertEqual(item[0].text, 'Jeff Buckley')
         self.assertEqual(item[1].text, 'ethereal')
 
+    def test_repeat_inserts_next_to_orig(self):
+        root = self._makeElement(_SIMPLE_XML)
+        start = self._makeElement("<start />")
+        final = self._makeElement("<final />")
+        root.insert(0, start)
+        root.append(final)
+        item = root.findmeld('list')
+        self.assertEqual(item.tag, 'list')
+        data = [{'name':'Jeff Buckley', 'description':'ethereal'},
+                {'name':'Slipknot', 'description':'heavy'}]
+        for element, d in item.repeat(data):
+            element.findmeld('name').text = d['name']
+            element.findmeld('description').text = d['description']
+        self.assertEqual(root[0].tag, start.tag)
+        self.assertEqual(root[-1].tag, final.tag)
+
     def test_repeat_child(self):
         root = self._makeElement(_SIMPLE_XML)
         list = root.findmeld('list')
