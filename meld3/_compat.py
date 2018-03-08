@@ -21,11 +21,6 @@ except ImportError: # Python 3.x
 
 
 try:
-    bytes = bytes
-except NameError:   # Python 2.5
-    bytes = str
-
-try:
     unichr = unichr
 except NameError:   # Python 3.x
     unichr = chr
