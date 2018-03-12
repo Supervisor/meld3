@@ -324,7 +324,7 @@ class MeldAPITests(unittest.TestCase):
         self.assertEqual(item.tag, 'item')
         unknown = root.findmeld('unknown', 'foo')
         self.assertEqual(unknown, 'foo')
-        self.assertEqual(root.findmeld('unknown'), None)
+        self.assertIsNone(root.findmeld('unknown'))
 
     def test_repeat_nochild(self):
         root = self._makeElement(_SIMPLE_XML)
@@ -409,18 +409,18 @@ class MeldAPITests(unittest.TestCase):
         clone = root.clone()
         unfilled = clone.fillmeldhtmlform(**data[1])
         self.assertEqual(unfilled, ['favorite_color:inputgroup'])
-        self.assertEqual(clone.findmeld('over18').attrib.get('checked'), None)
+        self.assertIsNone(clone.findmeld('over18').attrib.get('checked'))
         mailok = clone.findmeld('mailok:inputgroup')
         self.assertEqual(mailok[2].attrib['checked'], 'checked')
-        self.assertEqual(mailok[1].attrib.get('checked'), None)
+        self.assertIsNone(mailok[1].attrib.get('checked'))
 
         clone = root.clone()
         unfilled = clone.fillmeldhtmlform(**data[2])
         self.assertEqual(sorted(unfilled), ['notthere', 'suffix'])
-        self.assertEqual(clone.findmeld('honorific').text, None)
+        self.assertIsNone(clone.findmeld('honorific').text)
         favoritecolor = clone.findmeld('favorite_color:inputgroup')
         self.assertEqual(favoritecolor[2].attrib['checked'], 'checked')
-        self.assertEqual(favoritecolor[1].attrib.get('checked'), None)
+        self.assertIsNone(favoritecolor[1].attrib.get('checked'))
 
     def test_replace_removes_all_elements(self):
         from . import Replace
@@ -469,7 +469,7 @@ class MeldAPITests(unittest.TestCase):
         self.assertEqual(len(N.getchildren()), 0)
         D = I[1]
         self.assertEqual(D.tag, 'description')
-        self.assertEqual(D.text, None)
+        self.assertIsNone(D.text)
         self.assertEqual(len(D.getchildren()), 1)
         T = D[0]
         self.assertEqual(T.tag, Replace)
@@ -594,7 +594,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
 
     def test_ctor(self):
         iface = self._makeOne('div', {'id':'thediv'})
-        self.assertEqual(iface.parent, None)
+        self.assertIsNone(iface.parent)
         self.assertEqual(iface.tag, 'div')
         self.assertEqual(iface.attrib, {'id':'thediv'})
 
@@ -708,20 +708,20 @@ class MeldElementInterfaceTests(unittest.TestCase):
 
     def test_deparent_noparent(self):
         div = self._makeOne('div', {})
-        self.assertEqual(div.parent, None)
+        self.assertIsNone(div.parent)
         div.deparent()
-        self.assertEqual(div.parent, None)
+        self.assertIsNone(div.parent)
 
     def test_deparent_withparent(self):
         parent = self._makeOne('parent', {})
-        self.assertEqual(parent.parent, None)
+        self.assertIsNone(parent.parent)
         child = self._makeOne('child', {})
         parent.append(child)
-        self.assertEqual(parent.parent, None)
+        self.assertIsNone(parent.parent)
         self.assertEqual(child.parent, parent)
         self.assertEqual(parent[0], child)
         child.deparent()
-        self.assertEqual(child.parent, None)
+        self.assertIsNone(child.parent)
         self.assertRaises(IndexError, parent.__getitem__, 0)
 
     def test_setslice(self):
@@ -744,8 +744,8 @@ class MeldElementInterfaceTests(unittest.TestCase):
         children = (child1, child2, child3)
         parent[0:2] = children
         del parent[0:2]
-        self.assertEqual(child1.parent, None)
-        self.assertEqual(child2.parent, None)
+        self.assertIsNone(child1.parent)
+        self.assertIsNone(child2.parent)
         self.assertEqual(child3.parent, parent)
         self.assertEqual(len(parent._children), 1)
 
@@ -754,7 +754,7 @@ class MeldElementInterfaceTests(unittest.TestCase):
         child1 = self._makeOne('child1', {})
         parent.append(child1)
         parent.remove(child1)
-        self.assertEqual(child1.parent, None)
+        self.assertIsNone(child1.parent)
         self.assertEqual(len(parent._children), 0)
 
     def test_lineage(self):
@@ -1112,7 +1112,7 @@ class ParserTests(unittest.TestCase):
         from . import _MELD_ID
         root = self._parse(_SIMPLE_XML)
         self.assertEqual(root.tag, 'root')
-        self.assertEqual(root.parent, None)
+        self.assertIsNone(root.parent)
         l1st = root[0]
         self.assertEqual(l1st.tag, 'list')
         self.assertEqual(l1st.parent, root)
@@ -1137,7 +1137,7 @@ class ParserTests(unittest.TestCase):
         root = self._parse(_SIMPLE_XHTML)
         self.assertEqual(root.tag, xhtml_ns % 'html')
         self.assertEqual(root.attrib, {})
-        self.assertEqual(root.parent, None)
+        self.assertIsNone(root.parent)
         body = root[0]
         self.assertEqual(body.tag, xhtml_ns % 'body')
         self.assertEqual(body.attrib[_MELD_ID], 'body')
@@ -1149,7 +1149,7 @@ class ParserTests(unittest.TestCase):
         root = self._parse(_COMPLEX_XHTML)
         self.assertEqual(root.tag, xhtml_ns % 'html')
         self.assertEqual(root.attrib, {})
-        self.assertEqual(root.parent, None)
+        self.assertIsNone(root.parent)
         head = root[0]
         self.assertEqual(head.tag, xhtml_ns % 'head')
         self.assertEqual(head.attrib, {})
@@ -1223,7 +1223,7 @@ class ParserTests(unittest.TestCase):
         root = self._parse_html(_NVU_HTML)
         self.assertEqual(root.tag, 'html')
         self.assertEqual(root.attrib, {})
-        self.assertEqual(root.parent, None)
+        self.assertIsNone(root.parent)
         head = root[0]
         self.assertEqual(head.tag, 'head')
         self.assertEqual(head.attrib, {})
