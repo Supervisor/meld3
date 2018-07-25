@@ -17,9 +17,9 @@ Overview
 
 Requirements
 
-  On Python 3, meld3 requires Python 3.2 or later.
+  On Python 3, meld3 requires Python 3.4 or later.
 
-  On Python 2, meld3 requires Python 2.5 or later.
+  On Python 2, meld3 requires Python 2.7.
 
 Installation
 

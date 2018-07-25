@@ -1,6 +1,5 @@
 import email
 import re
-import sys
 
 from xml.etree.ElementTree import Comment
 from xml.etree.ElementTree import ElementPath
@@ -14,7 +13,6 @@ from ._compat import htmlentitydefs
 from ._compat import HTMLParser
 from ._compat import StringIO
 from ._compat import StringTypes
-from ._compat import bytes
 from ._compat import unichr
 from ._compat import _u
 from ._compat import _b
@@ -134,7 +132,7 @@ helper = PyHelper()
 _MELD_NS_URL  = 'http://www.plope.com/software/meld3'
 _MELD_PREFIX  = '{%s}' % _MELD_NS_URL
 _MELD_LOCAL   = 'id'
-_MELD_ID      = '%s%s' % (_MELD_PREFIX, _MELD_LOCAL)
+_MELD_ID      = '{}{}'.format(_MELD_PREFIX, _MELD_LOCAL)
 _MELD_SHORT_ID = 'meld:%s' % _MELD_LOCAL
 _XHTML_NS_URL = 'http://www.w3.org/1999/xhtml'
 _XHTML_PREFIX = '{%s}' % _XHTML_NS_URL
@@ -168,7 +166,7 @@ class _MeldElementInterface:
         self._children = []
 
     def __repr__(self):
-        return "<MeldElement %s at %x>" % (self.tag, id(self))
+        return "<MeldElement {} at {:x}>".format(self.tag, id(self))
 
     def __len__(self):
         return len(self._children)
@@ -742,27 +740,6 @@ class MeldTreeBuilder(TreeBuilder):
     def doctype(self, name, pubid, system):
         pass
 
-if sys.version_info < (2, 7):
-    class MeldParser(XMLParser):
-
-        """ Based on Fredrik's PIParser[1]
-
-        Blithely ignores the case of a comment existing outside the root
-        element, and ignores processing instructions entirely.
-
-        [1] http://effbot.org/zone/element-pi.htm.
-        """
-        def __init__(self, html=0, target=None):
-            XMLParser.__init__(self, html, target)
-            self._parser.CommentHandler = self.handle_comment
-
-        def handle_comment(self, data):
-            self._target.start(Comment, {})
-            self._target.data(data)
-            self._target.end(Comment)
-else:
-    #just use the stock one
-    MeldParser = XMLParser
 
 class HTMLMeldParser(HTMLParser):
     """ A mostly-cut-and-paste of ElementTree's HTMLTreeBuilder that
@@ -801,7 +778,7 @@ class HTMLMeldParser(HTMLParser):
             if http_equiv == "content-type" and content:
                 # use email to parse the http header
                 msg = email.message_from_string(
-                    "%s: %s\n\n" % (http_equiv, content)
+                    "{}: {}\n\n".format(http_equiv, content)
                     )
                 encoding = msg.get_param("charset")
                 if encoding:
@@ -879,7 +856,7 @@ def parse_xml(source):
     html is true, use a parser that can resolve somewhat ambiguous
     HTML into XHTML.  Otherwise use a 'normal' parser only."""
     builder = MeldTreeBuilder()
-    parser = MeldParser(target=builder)
+    parser = XMLParser(target=builder)
     return do_parse(source, parser)
 
 def parse_html(source, encoding=None):

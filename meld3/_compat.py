@@ -21,11 +21,6 @@ except ImportError: # Python 3.x
 
 
 try:
-    bytes = bytes
-except NameError:   # Python 2.5
-    bytes = str
-
-try:
     unichr = unichr
 except NameError:   # Python 3.x
     unichr = chr
@@ -85,7 +80,7 @@ def _encode(s, encoding):
 
 def _raise_serialization_error(text):
     raise TypeError(
-        "cannot serialize %r (type %s)" % (text, type(text).__name__)
+        "cannot serialize {!r} (type {})".format(text, type(text).__name__)
         )
 
 _pattern = None
@@ -129,7 +124,7 @@ def fixtag(tag, namespaces):
             xmlns = ("xmlns:%s" % prefix, namespace_uri)
     else:
         xmlns = None
-    return "%s:%s" % (prefix, tag), xmlns
+    return "{}:{}".format(prefix, tag), xmlns
 #-----------------------------------------------------------------------------
 # End fork from Python 2.6.8 stdlib
 #-----------------------------------------------------------------------------
