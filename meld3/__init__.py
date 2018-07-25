@@ -132,7 +132,7 @@ helper = PyHelper()
 _MELD_NS_URL  = 'http://www.plope.com/software/meld3'
 _MELD_PREFIX  = '{%s}' % _MELD_NS_URL
 _MELD_LOCAL   = 'id'
-_MELD_ID      = '%s%s' % (_MELD_PREFIX, _MELD_LOCAL)
+_MELD_ID      = '{}{}'.format(_MELD_PREFIX, _MELD_LOCAL)
 _MELD_SHORT_ID = 'meld:%s' % _MELD_LOCAL
 _XHTML_NS_URL = 'http://www.w3.org/1999/xhtml'
 _XHTML_PREFIX = '{%s}' % _XHTML_NS_URL
@@ -166,7 +166,7 @@ class _MeldElementInterface:
         self._children = []
 
     def __repr__(self):
-        return "<MeldElement %s at %x>" % (self.tag, id(self))
+        return "<MeldElement {} at {:x}>".format(self.tag, id(self))
 
     def __len__(self):
         return len(self._children)
@@ -778,7 +778,7 @@ class HTMLMeldParser(HTMLParser):
             if http_equiv == "content-type" and content:
                 # use email to parse the http header
                 msg = email.message_from_string(
-                    "%s: %s\n\n" % (http_equiv, content)
+                    "{}: {}\n\n".format(http_equiv, content)
                     )
                 encoding = msg.get_param("charset")
                 if encoding:
