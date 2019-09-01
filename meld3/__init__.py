@@ -131,7 +131,7 @@ class PyHelper:
 
 helper = PyHelper()
 
-_MELD_NS_URL  = 'http://www.plope.com/software/meld3'
+_MELD_NS_URL  = 'https://github.com/Supervisor/meld3'
 _MELD_PREFIX  = '{%s}' % _MELD_NS_URL
 _MELD_LOCAL   = 'id'
 _MELD_ID      = '%s%s' % (_MELD_PREFIX, _MELD_LOCAL)
