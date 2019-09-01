@@ -4,6 +4,9 @@
 - Removed support for older Python versions.  On Python 2, meld3 now
   requires Python 2.7.  On Python 3, meld3 now requires Python 3.4 or later.
 
+- Added Python 3.7 classifier to ``setup.py``.  No code changes were
+  needed for Python 3.7 compatibility.
+
 1.0.2 (2015-03-31)
 ------------------
 
