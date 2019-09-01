@@ -1,5 +1,5 @@
-2.0.0.dev0 (Next Release)
--------------------------
+2.0.0 (2019-09-01)
+------------------
 
 - Removed support for older Python versions.  On Python 2, meld3 now
   requires Python 2.7.  On Python 3, meld3 now requires Python 3.4 or later.
