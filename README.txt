@@ -17,9 +17,9 @@ Overview
 
 Requirements
 
-  On Python 3, meld3 requires Python 3.2 or later.
+  On Python 3, meld3 requires Python 3.4 or later.
 
-  On Python 2, meld3 requires Python 2.5 or later.
+  On Python 2, meld3 requires Python 2.7 or later.
 
 Installation
 
@@ -101,7 +101,7 @@ Examples
       <head>
         <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
         <title meld:id="title">This is the title</title>
-      </head> 
+      </head>
       <body>
         <div/> <!-- empty tag -->
         <div meld:id="content_well">
@@ -348,13 +348,13 @@ Element API
     "__mod__(other)": Fill in the text values of meld nodes in this
     element and children recursively; only support dictionarylike
     "other" operand (sequence operand doesn't seem to make sense here).
-    
+
     "fillmelds(**kw)":Fill in the text values of meld nodes in this
     element and children recursively.  Return the names of keys in the
     **kw dictionary that could not be found anywhere in the tree.  Never
     raise an exception.
 
-    "write_xml(file, encoding=None, doctype=None, fragment=False, 
+    "write_xml(file, encoding=None, doctype=None, fragment=False,
     declaration=True, pipeline=False)":
     Write XML to 'file' (which can be a filename or filelike object)
     encoding    -- encoding string (if None, 'utf-8' encoding is assumed)
