@@ -3,7 +3,7 @@ import re
 import sys
 
 _SIMPLE_XML = r"""<?xml version="1.0"?>
-<root xmlns:meld="https://github.com/Supervisor/meld3">
+<root xmlns:meld="http://www.plope.com/software/meld3">
   <list meld:id="list">
     <item meld:id="item">
        <name meld:id="name">Name</name>
@@ -13,7 +13,7 @@ _SIMPLE_XML = r"""<?xml version="1.0"?>
 </root>"""
 
 _SIMPLE_XHTML = r"""<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:meld="https://github.com/Supervisor/meld3">
+      xmlns:meld="http://www.plope.com/software/meld3">
    <body meld:id="body">Hello!</body>
 </html>"""
 
@@ -52,7 +52,7 @@ _ENTITIES_XHTML= r"""
 
 _COMPLEX_XHTML = r"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:meld="https://github.com/Supervisor/meld3"
+      xmlns:meld="http://www.plope.com/software/meld3"
       xmlns:bar="http://foo/bar">
   <head>
     <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
@@ -1266,13 +1266,13 @@ class ParserTests(unittest.TestCase):
 
 
     def test_dupe_meldids_fails_parse_xml(self):
-        meld_ns = "https://github.com/Supervisor/meld3"
+        meld_ns = "http://www.plope.com/software/meld3"
         repeated = ('<html xmlns:meld="%s" meld:id="repeat">'
                     '<body meld:id="repeat"/></html>' % meld_ns)
         self.assertRaises(ValueError, self._parse, repeated)
 
     def test_dupe_meldids_fails_parse_html(self):
-        meld_ns = "https://github.com/Supervisor/meld3"
+        meld_ns = "http://www.plope.com/software/meld3"
         repeated = ('<html xmlns:meld="%s" meld:id="repeat">'
                     '<body meld:id="repeat"/></html>' % meld_ns)
         self.assertRaises(ValueError, self._parse_html, repeated)
@@ -1297,7 +1297,7 @@ class UtilTests(unittest.TestCase):
         from . import insert_meld_ns_decl
         orig = '<?xml version="1.0" encoding="latin-1"?><root></root>'
         actual = insert_meld_ns_decl(orig)
-        expected = '<?xml version="1.0" encoding="latin-1"?><root xmlns:meld="https://github.com/Supervisor/meld3"></root>'
+        expected = '<?xml version="1.0" encoding="latin-1"?><root xmlns:meld="http://www.plope.com/software/meld3"></root>'
         self.assertEqual(actual, expected)
 
     def test_prefeed_preserves_existing_meld_ns(self):
@@ -1309,7 +1309,7 @@ class UtilTests(unittest.TestCase):
 
     def test_prefeed_preserves_existing_doctype(self):
         from . import prefeed
-        orig = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><root xmlns:meld="https://github.com/Supervisor/meld3"></root>'
+        orig = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><root xmlns:meld="http://www.plope.com/software/meld3"></root>'
         actual = prefeed(orig)
         self.assertEqual(actual, orig)
 
@@ -1524,14 +1524,14 @@ class WriterTests(unittest.TestCase):
     def test_write_simple_xhtml_pipeline(self):
         root = self._parse(_SIMPLE_XHTML)
         actual = self._write_xhtml(root, pipeline=True)
-        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body ns0:id="body" xmlns:ns0="https://github.com/Supervisor/meld3">Hello!</body></html>"""
+        expected = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body ns0:id="body" xmlns:ns0="http://www.plope.com/software/meld3">Hello!</body></html>"""
         self.assertNormalizedXMLEqual(actual, expected)
 
     def test_write_simple_xml_pipeline(self):
         root = self._parse(_SIMPLE_XML)
         actual = self._write_xml(root, pipeline=True)
         expected = """<?xml version="1.0"?><root>
-  <list ns0:id="list" xmlns:ns0="https://github.com/Supervisor/meld3">
+  <list ns0:id="list" xmlns:ns0="http://www.plope.com/software/meld3">
     <item ns0:id="item">
        <name ns0:id="name">Name</name>
        <description ns0:id="description">Description</description>

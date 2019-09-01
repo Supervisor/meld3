@@ -47,14 +47,14 @@ Differences from PyMeld
     and lets them avoid fighting over what to call elements.
 
   - The "id" attribute used to mark up is in the a separate namespace
-    (aka. xmlns="https://github.com/Supervisor/meld3").  So instead of
+    (aka. xmlns="http://www.plope.com/software/meld3").  So instead of
     marking up a tag like this: '<div id="thediv"></div>', meld3
     requires that you qualify the "id" attribute with a "meld"
     namespace element, like this: '<div meld:id="thediv"></div>'.  As
     per the XML namespace specification, the "meld" name is completely
     optional, and must only represent the
-    "https://github.com/Supervisor/meld3" namespace identifier, so
-    '<div xmlns:foo="https://github.com/Supervisor/meld3"
+    "http://www.plope.com/software/meld3" namespace identifier, so
+    '<div xmlns:foo="http://www.plope.com/software/meld3"
     foo:id="thediv"/>' is just as valid as as '<div
     meld:id="thediv"/>'
 
@@ -96,7 +96,7 @@ Examples
 
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
     <html xmlns="http://www.w3.org/1999/xhtml"
-          xmlns:meld="https://github.com/Supervisor/meld3"
+          xmlns:meld="http://www.plope.com/software/meld3"
           xmlns:bar="http://foo/bar">
       <head>
         <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
@@ -477,7 +477,7 @@ Parsing API
   When using parse_xml and parse_xmlstring, input documents must
   include the meld3 namespace declaration (conventionally on the root
   element).  For example, '<html
-  xmlns:meld="https://github.com/Supervisor/meld3">...</html>'
+  xmlns:meld="http://www.plope.com/software/meld3">...</html>'
 
   parse_html and parse_htmlstring take an optional "encoding" argument
   which specifies the document source encoding.
