@@ -1098,7 +1098,7 @@ def _encode_attrib(k, v, encoding):
 
 # overrides to elementtree to increase speed and get entity quoting correct.
 
-_NONENTITY_RE = re.compile(_b('&(?!([#\w]*;))')) # negative lookahead assertion
+_NONENTITY_RE = re.compile(_b(r'&(?!([#\w]*;))')) # negative lookahead assertion
 
 def _escape_cdata(text, encoding=None):
     # Return escaped character data as bytes.
