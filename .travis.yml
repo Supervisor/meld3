@@ -16,6 +16,10 @@ matrix:
           env:
               - TOXENV=py37
           dist: xenial          # required for Python >= 3.7
+        - python: 3.8
+          env:
+            - TOXENV=py38
+          dist: xenial          # required for Python >= 3.7
 install:
     - travis_retry pip install "virtualenv" tox
 script:
