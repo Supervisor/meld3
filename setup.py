@@ -11,7 +11,7 @@ elif (3, 0) < py_version < (3, 4):
 install_requires = []
 
 CLASSIFIERS = [
-    'Development Status :: 5 - Production/Stable',
+    'Development Status :: 7 - Inactive',
     'Environment :: Web Environment',
     'Intended Audience :: Developers',
     'Operating System :: POSIX',
@@ -26,10 +26,20 @@ CLASSIFIERS = [
     'Topic :: Text Processing :: Markup :: HTML'
     ]
 
+UNMAINTAINED = """
+    No further development of the meld3 package is planned.  The meld3 package
+    should be considered unmaintained as of April 2020.  Since 2007, meld3
+    received only minimal updates to keep compatible with newer Python versions.
+    It was only maintained because it was a dependency of the Supervisor package.
+    Since Supervisor 4.1.0 (released in October 2019), the meld3 package is
+    no longer a dependency of Supervisor.
+"""
+
 setup(
     name = 'meld3',
-    version = '2.0.1.dev0',
-    description = 'meld3 is an HTML/XML templating engine.',
+    version = '2.0.1',
+    description = 'Unmaintained templating system used by old versions of Supervisor',
+    long_description = UNMAINTAINED,
     classifiers = CLASSIFIERS,
     author = 'Chris McDonough',
     author_email = 'chrism@plope.com',

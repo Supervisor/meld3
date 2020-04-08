@@ -1,5 +1,14 @@
 meld3
 
+Development Status
+
+  No further development of the meld3 package is planned.  The meld3 package
+  should be considered unmaintained as of April 2020.  Since 2007, meld3
+  received only minimal updates to keep compatible with newer Python versions.
+  It was only maintained because it was a dependency of the Supervisor package.
+  Since Supervisor 4.1.0 (released in October 2019), the meld3 package is
+  no longer a dependency of Supervisor.
+
 Overview
 
   meld3 is an HTML/XML templating system for Python which keeps
