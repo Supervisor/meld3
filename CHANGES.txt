@@ -1,6 +1,8 @@
 2.0.1.dev0 (Next Release)
 -------------------------
 
+- Fixed a ``DeprecationWarning`` on Python 3.8.
+
 2.0.0 (2019-09-01)
 ------------------
 
